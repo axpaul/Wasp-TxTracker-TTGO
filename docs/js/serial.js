@@ -38,6 +38,10 @@ btnConnect.addEventListener('click', async () => {
     terminalInput.disabled = false;
     btnSend.disabled = false;
 
+    document.querySelectorAll('.config-panel input, .config-panel select, .config-panel button').forEach(el => {
+      if(el.id !== 'board-select' && !el.closest('esp-web-install-button')) el.disabled = false;
+    });
+
     keepReading = true;
     appendLog("--- Connexion Série Établie ---");
     readLoop();
@@ -63,6 +67,11 @@ btnDisconnect.addEventListener('click', async () => {
   btnDisconnect.disabled = true;
   terminalInput.disabled = true;
   btnSend.disabled = true;
+  
+  document.querySelectorAll('.config-panel input, .config-panel select, .config-panel button').forEach(el => {
+      if(el.id !== 'board-select' && !el.closest('esp-web-install-button')) el.disabled = true;
+  });
+  
   appendLog("--- Déconnecté ---");
 });
 
@@ -268,3 +277,20 @@ document.getElementById('btn-clear-telemetry')?.addEventListener('click', () => 
   telemetryTbody.innerHTML = '<tr id="row-empty"><td id="lbl-empty-telemetry" colspan="8" class="text-center text-secondary">No frames received yet. Connect the serial port and power on your trackers.</td></tr>';
   frameIndex = 0;
 });
+
+document.getElementById('btn-read-cfg')?.addEventListener('click', () => { sendData('AT+CFG'); });
+document.getElementById('btn-write-cfg')?.addEventListener('click', () => {
+  const freq = document.getElementById('input-freq').value;
+  const sf = document.getElementById('select-sf').value;
+  const bw = document.getElementById('select-bw').value;
+  const power = document.getElementById('input-power').value;
+  const crc = document.getElementById('select-crc').value;
+  if(freq) sendData('AT+FREQ=' + freq);
+  if(sf) sendData('AT+SF=' + sf);
+  if(bw) sendData('AT+BW=' + bw);
+  if(power) sendData('AT+POWER=' + power);
+  if(crc) sendData('AT+CRC=' + crc);
+});
+document.getElementById('btn-save-cfg')?.addEventListener('click', () => { sendData('AT+SAVE'); });
+document.getElementById('btn-reset-cfg')?.addEventListener('click', () => { sendData('AT+RESET'); });
+

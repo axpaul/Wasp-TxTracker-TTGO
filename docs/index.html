@@ -66,7 +66,7 @@
       </div>
     </section>
 
-    <!-- 2. FLASHER ESP WEB TOOLS (Remplaçant les Radio Settings) -->
+    <!-- 2. FLASHER ESP WEB TOOLS -->
     <section class="card config-panel">
       <h2>⚡ Web Flasher Wasp-TX</h2>
       <div class="card-content">
@@ -82,9 +82,75 @@
           <script type="module" src="https://unpkg.com/esp-web-tools@9.4.0/dist/web/install-button.js?module"></script>
           <esp-web-install-button id="install-button" manifest="manifest_v1_1.json">
             <button slot="activate" class="btn btn-accent" style="width: 100%;">Flasher la carte</button>
-            <span slot="unsupported" class="text-danger">Navigateur non supporté (Utilisez Chrome/Edge).</span>
+            <span slot="unsupported" class="text-danger">Navigateur non supporté.</span>
             <span slot="not-allowed" class="text-danger">Connexion non autorisée.</span>
           </esp-web-install-button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CONFIGURATION DE LA RADIO (AT COMMANDS) -->
+    <section class="card config-panel">
+      <h2>⚙️ Radio Settings</h2>
+      <div class="card-content">
+        <div class="form-group">
+          <label for="input-freq">FREQUENCY (MHZ):</label>
+          <div class="input-with-unit">
+            <input type="number" id="input-freq" min="400" max="900" step="0.001" placeholder="Ex: 869.525" disabled>
+            <span class="unit">MHz</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="select-sf">SPREADING FACTOR (SF):</label>
+          <select id="select-sf" disabled>
+            <option value="6">SF6</option>
+            <option value="7">SF7</option>
+            <option value="8" selected>SF8</option>
+            <option value="9">SF9</option>
+            <option value="10">SF10</option>
+            <option value="11">SF11</option>
+            <option value="12">SF12</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-bw">BANDWIDTH (BW):</label>
+          <select id="select-bw" disabled>
+            <option value="7.8">7.8 kHz</option>
+            <option value="10.4">10.4 kHz</option>
+            <option value="15.6">15.6 kHz</option>
+            <option value="20.8">20.8 kHz</option>
+            <option value="31.25">31.25 kHz</option>
+            <option value="41.7">41.7 kHz</option>
+            <option value="62.5">62.5 kHz</option>
+            <option value="125">125.0 kHz</option>
+            <option value="250" selected>250.0 kHz</option>
+            <option value="500">500.0 kHz</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="input-power">POWER (dBm):</label>
+          <div class="input-with-unit">
+            <input type="number" id="input-power" min="2" max="20" step="1" placeholder="Ex: 14" disabled>
+            <span class="unit">dBm</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="select-crc">CRC CONTROL:</label>
+          <select id="select-crc" disabled>
+            <option value="0">Désactivé (Option B / Soft)</option>
+            <option value="1" selected>Activé - CCITT (Option A / Hard)</option>
+          </select>
+        </div>
+
+        <div class="button-group-grid" style="margin-top: 1rem;">
+          <button id="btn-read-cfg" class="btn btn-secondary" disabled>REFRESH</button>
+          <button id="btn-write-cfg" class="btn btn-accent" disabled>APPLY</button>
+          <button id="btn-save-cfg" class="btn btn-success" disabled>SAVE NVS</button>
+          <button id="btn-reset-cfg" class="btn btn-danger" disabled>FACTORY RESET</button>
         </div>
       </div>
     </section>
@@ -157,24 +223,34 @@
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Test communication with the station</div>
             </div>
 
+            <div class="at-command-item btn-at" data-cmd="AT+HELP" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+HELP</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Print the complete help menu</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+INFO" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+INFO</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query station identification</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+CFG" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+CFG</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Display the detailed configuration</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+FREQ?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+FREQ?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query the active frequency</div>
+            </div>
+
             <div class="at-command-item btn-at" data-cmd="AT+DEBUG=1" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
               <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+DEBUG=1</div>
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Enable extended debug logs</div>
             </div>
 
-            <div class="at-command-item btn-at" data-cmd="AT+DEBUG=0" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
-              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+DEBUG=0</div>
-              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Disable extended debug logs</div>
-            </div>
-
             <div class="at-command-item btn-at" data-cmd="AT+BINUSB=1" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
               <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+BINUSB=1</div>
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Enable binary telemetry output</div>
-            </div>
-
-            <div class="at-command-item btn-at" data-cmd="AT+BINUSB=0" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
-              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+BINUSB=0</div>
-              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Disable binary telemetry output</div>
             </div>
 
           </div>
