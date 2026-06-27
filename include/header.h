@@ -67,7 +67,7 @@
 
 // Activer Bluetooth classique (SPP) pour les commandes AT sans fil
 // Note : Consomme environ 1MB de Flash et 150KB de RAM. Désactivé par défaut.
-#define ENABLE_BLUETOOTH        0
+#define ENABLE_BLUETOOTH        1
 
 #if ENABLE_BLUETOOTH
 #include "BluetoothSerial.h"
