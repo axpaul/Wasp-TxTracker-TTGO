@@ -33,12 +33,35 @@ if (!("serial" in navigator)) {
   appendLog("Assurez-vous d'utiliser Chrome/Edge et d'ouvrir ce site via HTTPS ou un serveur local (localhost), et non 'file:///'.");
 }
 
+function updateDynamicUI() {
+  const lang = localStorage.getItem('wasp_lang') || 'fr';
+  const isConnected = port && port.readable;
+  
+  if (isConnected) {
+    connBadge.textContent = lang === 'en' ? 'Serial Connected' : 'Série Connectée';
+    const portInfo = port.getInfo();
+    let portDesc = lang === 'en' ? 'Connected' : 'Connecté';
+    if (portInfo.usbVendorId !== undefined) {
+      portDesc = lang === 'en'
+        ? `USB Device (VID: 0x${portInfo.usbVendorId.toString(16).toUpperCase()}, PID: 0x${portInfo.usbProductId.toString(16).toUpperCase()})`
+        : `Périphérique USB (VID: 0x${portInfo.usbVendorId.toString(16).toUpperCase()}, PID: 0x${portInfo.usbProductId.toString(16).toUpperCase()})`;
+    }
+    const lblPortName = document.getElementById('lbl-port-name');
+    if (lblPortName) lblPortName.textContent = portDesc;
+  } else {
+    connBadge.textContent = lang === 'en' ? 'Serial Disconnected' : 'Série Déconnectée';
+    const lblPortName = document.getElementById('lbl-port-name');
+    if (lblPortName) lblPortName.textContent = lang === 'en' ? 'No device connected' : 'Aucun appareil connecté';
+  }
+}
+
+window.addEventListener('lang-changed', updateDynamicUI);
+
 btnConnect.addEventListener('click', async () => {
   try {
     port = await navigator.serial.requestPort();
     await port.open({ baudRate: 115200 });
 
-    connBadge.textContent = 'Série Connectée';
     connBadge.classList.remove('disconnected');
     connBadge.classList.add('connected');
     btnConnect.disabled = true;
@@ -51,13 +74,7 @@ btnConnect.addEventListener('click', async () => {
       if(el.id !== 'board-select' && !el.closest('esp-web-install-button')) el.disabled = false;
     });
 
-    const portInfo = port.getInfo();
-    let portDesc = "Connecté";
-    if (portInfo.usbVendorId !== undefined) {
-      portDesc = `Périphérique USB (VID: 0x${portInfo.usbVendorId.toString(16).toUpperCase()}, PID: 0x${portInfo.usbProductId.toString(16).toUpperCase()})`;
-    }
-    const lblPortName = document.getElementById('lbl-port-name');
-    if (lblPortName) lblPortName.textContent = portDesc;
+    updateDynamicUI();
 
     keepReading = true;
     appendLog("--- Connexion Série Établie ---");
@@ -77,7 +94,6 @@ btnDisconnect.addEventListener('click', async () => {
     await port.close().catch(e => console.error("Port close error:", e));
   }
   
-  connBadge.textContent = 'Série Déconnectée';
   connBadge.classList.remove('connected');
   connBadge.classList.add('disconnected');
   btnConnect.disabled = false;
@@ -90,8 +106,7 @@ btnDisconnect.addEventListener('click', async () => {
     if(el.id !== 'board-select' && !el.closest('esp-web-install-button')) el.disabled = true;
   });
   
-  const lblPortName = document.getElementById('lbl-port-name');
-  if (lblPortName) lblPortName.textContent = 'Aucun appareil connecté';
+  updateDynamicUI();
   
   appendLog("--- Déconnecté ---");
 });

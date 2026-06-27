@@ -37,41 +37,45 @@
       </div>
       <div>
         <h1>WASP-TX</h1>
-        <p class="subtitle">Wireless Altitude & Status Positioning</p>
+        <p class="subtitle" data-i18n="header_subtitle">Wireless Altitude & Status Positioning</p>
       </div>
     </div>
     <div class="header-right">
-      <div id="conn-badge" class="badge disconnected">Série Déconnectée</div>
+      <div class="lang-selector">
+        <button id="btn-lang-fr" class="btn-lang active">FR</button>
+        <button id="btn-lang-en" class="btn-lang">EN</button>
+      </div>
+      <div id="conn-badge" class="badge disconnected" data-i18n="conn_disconnected">Série Déconnectée</div>
     </div>
   </header>
 
   <main class="dashboard-grid">
     <!-- 1. PANNEAU DE CONNEXION SÉRIE -->
     <section class="card connection-panel">
-      <h2>🔌 USB Serial Link</h2>
+      <h2 data-i18n="conn_title">🔌 USB Serial Link</h2>
       <div class="card-content">
         <div class="form-group">
-          <label for="baudrate">Vitesse de transmission (Baud) :</label>
+          <label for="baudrate" data-i18n="conn_baudrate">Vitesse de transmission (Baud) :</label>
           <select id="baudrate">
             <option value="115200" selected>115200</option>
           </select>
         </div>
         <div class="button-group-row" style="margin-top: 1.5rem;">
-          <button id="btn-connect" class="btn btn-primary">Connexion</button>
-          <button id="btn-disconnect" class="btn btn-danger" disabled>Déconnexion</button>
+          <button id="btn-connect" class="btn btn-primary" data-i18n="conn_connect">Connexion</button>
+          <button id="btn-disconnect" class="btn btn-danger" data-i18n="conn_disconnect" disabled>Déconnexion</button>
         </div>
         <div class="port-info text-secondary" style="margin-top: 1rem;">
-          <span>Statut :</span> <span id="lbl-port-name">Aucun appareil connecté</span>
+          <span data-i18n="conn_status_label">Statut :</span> <span id="lbl-port-name" data-i18n="conn_no_device">Aucun appareil connecté</span>
         </div>
       </div>
     </section>
 
     <!-- 2. CONFIGURATION DE LA RADIO (AT COMMANDS) -->
     <section class="card config-panel">
-      <h2>⚙️ Radio Settings</h2>
+      <h2 data-i18n="radio_title">⚙️ Radio Settings</h2>
       <div class="card-content">
         <div class="form-group">
-          <label for="input-freq">FREQUENCY (MHZ):</label>
+          <label for="input-freq" data-i18n="radio_freq">FREQUENCY (MHZ):</label>
           <div class="input-with-unit">
             <input type="number" id="input-freq" min="400" max="900" step="0.001" placeholder="Ex: 869.525" disabled>
             <span class="unit">MHz</span>
@@ -79,7 +83,7 @@
         </div>
         
         <div class="form-group">
-          <label for="select-sf">SPREADING FACTOR (SF):</label>
+          <label for="select-sf" data-i18n="radio_sf">SPREADING FACTOR (SF):</label>
           <select id="select-sf" disabled>
             <option value="6">SF6</option>
             <option value="7">SF7</option>
@@ -92,7 +96,7 @@
         </div>
 
         <div class="form-group">
-          <label for="select-bw">BANDWIDTH (BW):</label>
+          <label for="select-bw" data-i18n="radio_bw">BANDWIDTH (BW):</label>
           <select id="select-bw" disabled>
             <option value="7.8">7.8 kHz</option>
             <option value="10.4">10.4 kHz</option>
@@ -108,7 +112,7 @@
         </div>
 
         <div class="form-group">
-          <label for="input-power">POWER (dBm):</label>
+          <label for="input-power" data-i18n="radio_power">POWER (dBm):</label>
           <div class="input-with-unit">
             <input type="number" id="input-power" min="2" max="20" step="1" placeholder="Ex: 14" disabled>
             <span class="unit">dBm</span>
@@ -116,7 +120,7 @@
         </div>
 
         <div class="form-group">
-          <label for="select-crc">CRC CONTROL:</label>
+          <label for="select-crc" data-i18n="radio_crc">CRC CONTROL:</label>
           <select id="select-crc" disabled>
             <option value="0">Désactivé (Option B / Soft)</option>
             <option value="1" selected>Activé - CCITT (Option A / Hard)</option>
@@ -124,25 +128,25 @@
         </div>
 
         <div class="button-group-grid" style="margin-top: 1rem;">
-          <button id="btn-read-cfg" class="btn btn-secondary" disabled>REFRESH</button>
-          <button id="btn-write-cfg" class="btn btn-accent" disabled>APPLY</button>
-          <button id="btn-save-cfg" class="btn btn-success" disabled>SAVE NVS</button>
-          <button id="btn-reset-cfg" class="btn btn-danger" disabled>FACTORY RESET</button>
+          <button id="btn-read-cfg" class="btn btn-secondary" data-i18n="btn_refresh" disabled>REFRESH</button>
+          <button id="btn-write-cfg" class="btn btn-accent" data-i18n="btn_write" disabled>APPLY</button>
+          <button id="btn-save-cfg" class="btn btn-success" data-i18n="btn_save" disabled>SAVE NVS</button>
+          <button id="btn-reset-cfg" class="btn btn-danger" data-i18n="btn_reset" disabled>FACTORY RESET</button>
         </div>
       </div>
     </section>
 
     <!-- 4. TRACKER SETTINGS (AT COMMANDS) -->
     <section class="card config-panel">
-      <h2>🛸 Tracker Settings</h2>
+      <h2 data-i18n="tracker_title">🛸 Tracker Settings</h2>
       <div class="card-content">
         <div class="form-group">
-          <label for="input-tracker-id">TRACKER ID (SSID NUM):</label>
+          <label for="input-tracker-id" data-i18n="tracker_id">TRACKER ID (SSID NUM):</label>
           <input type="number" id="input-tracker-id" min="0" max="255" placeholder="Ex: 1" disabled>
         </div>
 
         <div class="form-group">
-          <label for="select-tracker-type">TRACKER TYPE (SSID TYPE):</label>
+          <label for="select-tracker-type" data-i18n="tracker_type">TRACKER TYPE (SSID TYPE):</label>
           <select id="select-tracker-type" disabled>
             <option value="0">FX</option>
             <option value="1">MF</option>
@@ -152,12 +156,12 @@
         </div>
 
         <div class="form-group">
-          <label for="input-apid">APID (0-255):</label>
+          <label for="input-apid" data-i18n="tracker_apid">APID (0-255):</label>
           <input type="number" id="input-apid" min="0" max="255" placeholder="Ex: 10" disabled>
         </div>
 
         <div class="form-group">
-          <label for="input-interval">TX INTERVAL (sec):</label>
+          <label for="input-interval" data-i18n="tracker_interval">TX INTERVAL (sec):</label>
           <div class="input-with-unit">
             <input type="number" id="input-interval" min="1" max="3600" placeholder="Ex: 1" disabled>
             <span class="unit">sec</span>
@@ -165,19 +169,19 @@
         </div>
 
         <div class="button-group-grid" style="margin-top: 1.5rem;">
-          <button id="btn-read-tracker" class="btn btn-secondary" disabled>REFRESH</button>
-          <button id="btn-write-tracker" class="btn btn-accent" disabled>APPLY</button>
+          <button id="btn-read-tracker" class="btn btn-secondary" data-i18n="btn_refresh" disabled>REFRESH</button>
+          <button id="btn-write-tracker" class="btn btn-accent" data-i18n="btn_write" disabled>APPLY</button>
         </div>
       </div>
     </section>
 
     <!-- 3. FLASHER ESP WEB TOOLS -->
     <section class="card config-panel">
-      <h2>⚡ Web Flasher Wasp-TX</h2>
+      <h2 data-i18n="flasher_title">⚡ Web Flasher Wasp-TX</h2>
       <div class="card-content">
-        <p class="description" style="margin-bottom: 1rem;">Flashez directement le firmware sur la carte ESP32 depuis le navigateur.</p>
+        <p class="description" style="margin-bottom: 1rem;" data-i18n="flasher_desc">Flashez directement le firmware sur la carte ESP32 depuis le navigateur.</p>
         <div class="form-group">
-          <label for="board-select">Sélection de la carte :</label>
+          <label for="board-select" data-i18n="flasher_board">Sélection de la carte :</label>
           <select id="board-select">
             <option value="manifest_v1_1.json" selected>T-Beam V1.1 (AXP192)</option>
             <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
@@ -186,7 +190,7 @@
         <div class="button-group-grid" style="margin-top: 2rem;">
           <script type="module" src="https://unpkg.com/esp-web-tools@9.4.0/dist/web/install-button.js?module"></script>
           <esp-web-install-button id="install-button" manifest="manifest_v1_1.json">
-            <button slot="activate" class="btn btn-accent" style="width: 100%;">Flasher la carte</button>
+            <button slot="activate" class="btn btn-accent" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
             <span slot="unsupported" class="text-danger">Navigateur non supporté.</span>
             <span slot="not-allowed" class="text-danger">Connexion non autorisée.</span>
           </esp-web-install-button>
@@ -196,32 +200,32 @@
 
     <!-- 4. LIVE TELEMETRY WIDGETS -->
     <section class="card stats-panel full-width">
-      <h2>📡 Télémétrie Wasp Décryptée</h2>
+      <h2 data-i18n="decrypted_title">📡 Télémétrie Wasp Décryptée</h2>
       <div class="card-content stats-content">
         <div class="mini-stats">
           <div class="stat-box">
             <span class="stat-val" id="stat-alt">--</span>
-            <span class="stat-lbl">ALTITUDE (m)</span>
+            <span class="stat-lbl" data-i18n="lbl_altitude">ALTITUDE (m)</span>
           </div>
           <div class="stat-box">
             <span class="stat-val" id="stat-spd">--</span>
-            <span class="stat-lbl">VITESSE (km/h)</span>
+            <span class="stat-lbl" data-i18n="lbl_speed">VITESSE (km/h)</span>
           </div>
           <div class="stat-box">
             <span class="stat-val" id="stat-sat">--</span>
-            <span class="stat-lbl">SATELLITES</span>
+            <span class="stat-lbl" data-i18n="lbl_satellites">SATELLITES</span>
           </div>
           <div class="stat-box">
             <span class="stat-val" id="stat-temp">--</span>
-            <span class="stat-lbl">TEMPÉRATURE (°C)</span>
+            <span class="stat-lbl" data-i18n="lbl_temperature">TEMPÉRATURE (°C)</span>
           </div>
           <div class="stat-box">
             <span class="stat-val" id="stat-bat">--</span>
-            <span class="stat-lbl">BATTERIE (V)</span>
+            <span class="stat-lbl" data-i18n="lbl_battery">BATTERIE (V)</span>
           </div>
           <div class="stat-box">
             <span class="stat-val" id="stat-rssi">--</span>
-            <span class="stat-lbl">RSSI / SNR</span>
+            <span class="stat-lbl" data-i18n="lbl_rssi">RSSI / SNR</span>
           </div>
         </div>
       </div>
@@ -230,7 +234,7 @@
     <!-- 5. MAP DASHBOARD -->
     <section class="card map-panel full-width">
       <div class="card-header">
-        <h2>🗺️ Position GPS Live</h2>
+        <h2 data-i18n="map_title">🗺️ Position GPS Live</h2>
       </div>
       <div class="card-content">
         <div id="map" style="height: 350px; border-radius: 8px; background: #222; border: 1px solid var(--bg-card-border); z-index: 1;"></div>
@@ -240,30 +244,30 @@
     <!-- 6. RAW NECTARMC FRAMES TABLE -->
     <section class="card telemetry-panel full-width">
       <div class="card-header">
-        <h2>🛸 Live received frames (NectarMC)</h2>
+        <h2 data-i18n="table_title">Live received frames (NectarMC)</h2>
         <div class="header-actions">
-          <button id="btn-export-telemetry" class="btn btn-success btn-sm">EXPORT CSV</button>
-          <button id="btn-clear-telemetry" class="btn btn-secondary btn-sm">CLEAR</button>
+          <button id="btn-export-telemetry" class="btn btn-success btn-sm" data-i18n="btn_export">EXPORT CSV</button>
+          <button id="btn-clear-telemetry" class="btn btn-secondary btn-sm" data-i18n="btn_clear">CLEAR</button>
         </div>
       </div>
       <div class="card-content table-container">
         <table id="table-telemetry">
           <thead>
             <tr>
-              <th>INDEX</th>
-              <th>TIMESTAMP</th>
-              <th>TRACKER (SSID)</th>
-              <th>APID</th>
-              <th>SIZE</th>
-              <th>RSSI</th>
-              <th>SNR</th>
-              <th>CRC</th>
-              <th>PAYLOAD (HEX)</th>
+              <th data-i18n="th_index">INDEX</th>
+              <th data-i18n="th_timestamp">TIMESTAMP</th>
+              <th data-i18n="th_tracker">TRACKER (SSID)</th>
+              <th data-i18n="th_apid">APID</th>
+              <th data-i18n="th_size">SIZE</th>
+              <th data-i18n="th_rssi">RSSI</th>
+              <th data-i18n="th_snr">SNR</th>
+              <th data-i18n="th_crc">CRC</th>
+              <th data-i18n="th_payload">PAYLOAD (HEX)</th>
             </tr>
           </thead>
           <tbody id="telemetry-tbody">
             <tr id="row-empty">
-              <td id="lbl-empty-telemetry" colspan="9" class="text-center text-secondary">No frames received yet. Connect the serial port and power on your trackers.</td>
+              <td id="lbl-empty-telemetry" colspan="9" class="text-center text-secondary" data-i18n="table_empty">No frames received yet. Connect the serial port and power on your trackers.</td>
             </tr>
           </tbody>
         </table>
@@ -273,21 +277,21 @@
     <!-- 7. TERMINAL DE COMMANDES SÉRIE -->
     <section class="card terminal-panel full-width">
       <div class="card-header">
-        <h2>📟 Console & Terminal</h2>
-        <button id="btn-clear-terminal" class="btn btn-secondary btn-sm">CLEAR</button>
+        <h2 data-i18n="terminal_title">📟 Console & Terminal</h2>
+        <button id="btn-clear-terminal" class="btn btn-secondary btn-sm" data-i18n="btn_clear">CLEAR</button>
       </div>
       <div class="card-content terminal-dashboard">
         <div class="terminal-log-section">
           <div id="terminal-logs" class="terminal-view"></div>
           <form id="terminal-form" class="terminal-input-row">
             <span class="prompt">&gt;</span>
-            <input type="text" id="terminal-input" placeholder="Type an AT command (e.g. AT, AT+DEBUG, AT+BINUSB)..." disabled>
-            <button type="submit" id="btn-send" class="btn btn-secondary" disabled>SEND</button>
+            <input type="text" id="terminal-input" data-i18n-placeholder="terminal_placeholder" placeholder="Type an AT command (e.g. AT, AT+DEBUG, AT+BINUSB)..." disabled>
+            <button type="submit" id="btn-send" class="btn btn-secondary" data-i18n="btn_send" disabled>SEND</button>
           </form>
         </div>
         <div class="at-helper-panel">
           <div class="at-helper-header">
-            <span class="at-helper-title">📋 AT COMMAND CHEATSHEET</span>
+            <span class="at-helper-title" data-i18n="at_helper">📋 AT COMMAND CHEATSHEET</span>
           </div>
           <div class="at-helper-list" id="at-helper-list">
             
@@ -394,8 +398,9 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
-  <script type="module" src="js/app.js?v=1.0.3"></script>
-  <script type="module" src="js/serial.js?v=1.0.3"></script>
+  <script type="module" src="js/translate.js?v=1.0.4"></script>
+  <script type="module" src="js/app.js?v=1.0.4"></script>
+  <script type="module" src="js/serial.js?v=1.0.4"></script>
   <script>
     document.getElementById('board-select').addEventListener('change', (e) => {
       document.getElementById('install-button').setAttribute('manifest', e.target.value);
