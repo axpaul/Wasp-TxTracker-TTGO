@@ -58,7 +58,7 @@
 #define DEFAULT_CR              5       // Coding Rate 4/5
 #define DEFAULT_SYNC_WORD       0x12
 #define DEFAULT_POWER           14      // Puissance en dBm (14 dBm par défaut)
-#define DEFAULT_TX_INTERVAL     10      // Intervalle de transmission (secondes)
+#define DEFAULT_TX_INTERVAL     1       // Intervalle de transmission (secondes)
 
 #define FREQ_MIN                863.0f
 #define FREQ_MAX                870.0f

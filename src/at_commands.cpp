@@ -248,6 +248,7 @@ void handleConfigCommand(const char* cmd, Stream& responseStream) {
         if (val >= 1 && val <= 3600) {
             activeConfig.txInterval = (uint16_t)val;
             updateTimerInterval(activeConfig.txInterval);
+            saveLoRaConfig(); // Enregistrer automatiquement dans la mémoire de configuration NVS
             responseStream.println("OK");
         } else {
             responseStream.println("ERROR: Interval must be between 1 and 3600 seconds");
