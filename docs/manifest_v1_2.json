@@ -1,0 +1,14 @@
+{
+  "name": "Wasp-TX V1.2 (AXP2101)",
+  "version": "1.0.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "binaries/tbeam_v1_2/bootloader.bin", "offset": 4096 },
+        { "path": "binaries/tbeam_v1_2/partitions.bin", "offset": 32768 },
+        { "path": "binaries/tbeam_v1_2/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

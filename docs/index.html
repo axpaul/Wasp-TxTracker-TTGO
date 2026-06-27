@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wasp-TX - Web Control Center</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+  <div class="glow-bg"></div>
+  
+  <header>
+    <div class="logo-container">
+      <div class="antenna-icon">
+        <svg class="antenna-svg" viewBox="0 0 50 50" width="45" height="45">
+          <!-- Antenna waves (concentric circles) -->
+          <circle class="antenna-wave wave-1" cx="25" cy="14" r="8" fill="none" stroke="var(--color-primary)" stroke-width="1.5" />
+          <circle class="antenna-wave wave-2" cx="25" cy="14" r="16" fill="none" stroke="var(--color-primary)" stroke-width="1.5" />
+          <circle class="antenna-wave wave-3" cx="25" cy="14" r="24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" />
+          
+          <!-- Pylon Structure -->
+          <!-- Left Leg -->
+          <line x1="25" y1="25" x2="15" y2="45" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" />
+          <!-- Right Leg -->
+          <line x1="25" y1="25" x2="35" y2="45" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" />
+          <!-- Bottom Strut -->
+          <line x1="12" y1="45" x2="38" y2="45" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" />
+          
+          <!-- Horizontal strut at y=35 -->
+          <line x1="20" y1="35" x2="30" y2="35" stroke="var(--text-main)" stroke-width="1.5" stroke-linecap="round" />
+          
+          <!-- Diagonal crossbeams (struts) -->
+          <line x1="15" y1="45" x2="30" y2="35" stroke="var(--text-main)" stroke-width="1" stroke-linecap="round" />
+          <line x1="35" y1="45" x2="20" y2="35" stroke="var(--text-main)" stroke-width="1" stroke-linecap="round" />
+          <line x1="20" y1="35" x2="25" y2="25" stroke="var(--text-main)" stroke-width="1" stroke-linecap="round" />
+          <line x1="30" y1="35" x2="25" y2="25" stroke="var(--text-main)" stroke-width="1" stroke-linecap="round" />
+          
+          <!-- Vertical mast -->
+          <line x1="25" y1="25" x2="25" y2="14" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" />
+          
+          <!-- Transmitter bulb -->
+          <circle cx="25" cy="14" r="3" fill="var(--color-primary)" />
+          <circle cx="25" cy="14" r="6" fill="var(--color-primary)" opacity="0.4" class="bulb-glow" />
+        </svg>
+      </div>
+      <div>
+        <h1>WASP-TX</h1>
+        <p class="subtitle">Wireless Altitude & Status Positioning</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="conn-badge" class="badge disconnected">Série Déconnectée</div>
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    <!-- ESP WEB FLASHER -->
+    <section class="card flasher-panel">
+      <h2>⚡ Web Flasher</h2>
+      <div class="card-content">
+        <p class="description">Installez le firmware Wasp-TX directement depuis votre navigateur.</p>
+        <div class="form-group">
+          <label for="board-select">Version de la carte :</label>
+          <select id="board-select">
+            <option value="manifest_v1_1.json">T-Beam V1.1 (AXP192)</option>
+            <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
+          </select>
+        </div>
+        <div class="flasher-container">
+          <!-- ESP Web Tools install button container -->
+          <script type="module" src="https://unpkg.com/esp-web-tools@9.4.0/dist/web/install-button.js?module"></script>
+          <esp-web-install-button id="install-button" manifest="manifest_v1_1.json">
+            <button slot="activate" class="btn btn-primary" style="width: 100%;">Connecter et Flasher</button>
+            <span slot="unsupported">Navigateur non supporté (Utilisez Chrome/Edge).</span>
+            <span slot="not-allowed">Connexion non autorisée.</span>
+          </esp-web-install-button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERIAL CONNECTION & CONSOLE -->
+    <section class="card serial-panel">
+      <h2>🔌 Console Série & AT Commands</h2>
+      <div class="card-content">
+        <div class="button-group-row">
+          <button id="btn-connect" class="btn btn-primary">Connexion Série</button>
+          <button id="btn-disconnect" class="btn btn-danger" disabled>Déconnexion</button>
+        </div>
+        <div class="terminal-dashboard" style="margin-top: 1rem;">
+          <div class="terminal-log-section">
+            <div id="terminal-logs" class="terminal-view"></div>
+            <form id="terminal-form" class="terminal-input-row">
+              <span class="prompt">&gt;</span>
+              <input type="text" id="terminal-input" placeholder="Tapez une commande AT (ex: AT+DEBUG)..." disabled>
+              <button type="submit" id="btn-send" class="btn btn-secondary" disabled>Envoyer</button>
+            </form>
+          </div>
+          <div class="at-helper-panel" style="margin-top: 1rem;">
+            <div class="at-helper-header">
+              <span class="at-helper-title">📋 Raccourcis AT Wasp-TX</span>
+            </div>
+            <div class="button-group-grid" style="margin-top: 0.5rem; gap: 0.5rem; display: grid; grid-template-columns: 1fr 1fr;">
+              <button class="btn btn-secondary btn-sm btn-at" data-cmd="AT">Ping (AT)</button>
+              <button class="btn btn-secondary btn-sm btn-at" data-cmd="AT+DEBUG">Toggle Debug (AT+DEBUG)</button>
+              <button class="btn btn-secondary btn-sm btn-at" data-cmd="AT+BINUSB">Toggle BinUSB (AT+BINUSB)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TELEMETRY DASHBOARD -->
+    <section class="card telemetry-panel">
+      <div class="card-header">
+        <h2>📊 Télémétrie en direct</h2>
+        <button id="btn-clear-telemetry" class="btn btn-secondary btn-sm">Effacer</button>
+      </div>
+      <div class="card-content stats-content">
+        <div class="mini-stats">
+          <div class="stat-box">
+            <span class="stat-val" id="tele-alt">--</span>
+            <span class="stat-lbl">Altitude (m)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="tele-spd">--</span>
+            <span class="stat-lbl">Vitesse (km/h)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="tele-temp">--</span>
+            <span class="stat-lbl">Température (°C)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="tele-sat">--</span>
+            <span class="stat-lbl">Satellites</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val" id="tele-bat">--</span>
+            <span class="stat-lbl">Batterie (mV)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP DASHBOARD -->
+    <section class="card map-panel full-width">
+      <h2>🗺️ Position GPS Live</h2>
+      <div class="card-content">
+        <div id="map" style="height: 350px; border-radius: 8px; background: #222; border: 1px solid var(--bg-card-border);"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Wasp-TX Project - Conçu et développé par <a href="https://github.com/axpaul" target="_blank" style="color: var(--color-primary); text-decoration: none; font-weight: 600;">Paul Miailhe (axpaul)</a> | Basé sur l'UI de Nectar</p>
+  </footer>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/serial.js"></script>
+</body>
+</html>
