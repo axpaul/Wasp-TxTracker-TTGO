@@ -65,15 +65,7 @@
 
 #define NECTAR_MAGIC            0xEB
 
-// Activer Bluetooth classique (SPP) pour les commandes AT sans fil
-// Note : Consomme environ 1MB de Flash et 150KB de RAM. Désactivé par défaut.
 #define ENABLE_BLUETOOTH        1
-
-// Activer l'envoi de la trame binaire brute sur le port USB Serial (pour NectarMC)
-#define ENABLE_USB_BINARY       0
-
-// Activer les logs de débogage texte lisibles ([TX] et [HEX]) sur le port USB Serial
-#define ENABLE_DEBUG_LOGS       0
 
 #if ENABLE_BLUETOOTH
 #include "BluetoothSerial.h"
@@ -84,7 +76,7 @@ extern BluetoothSerial SerialBT;
 // 5. STRUCTURES DE DONNÉES
 // ============================================================================
 
-// Configuration LoRa stockée en mémoire non-volatile (NVS)
+// configuration LoRa stockée en mémoire non-volatile (NVS)
 struct LoRaConfig {
     float frequency;
     float bandwidth;
@@ -96,6 +88,8 @@ struct LoRaConfig {
     uint8_t trackerType;  // Type de tracker (ssid_type : 0=FX, 1=MF, 2=BALLOON, 3=OTHER)
     uint8_t apid;         // Application ID
     uint16_t txInterval;  // Intervalle d'envoi en secondes
+    uint8_t enableUsbBinary; // 1 = émettre la trame binaire brute sur USB, 0 = désactivé
+    uint8_t enableDebugLogs; // 1 = afficher les logs [TX] et [HEX] en clair sur USB, 0 = désactivé
 };
 
 #pragma pack(push, 1) // Force l'alignement sur 1 octet pour la transmission radio

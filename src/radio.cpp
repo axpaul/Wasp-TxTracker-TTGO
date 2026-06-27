@@ -31,6 +31,8 @@ void loadLoRaConfig() {
     activeConfig.trackerType = prefs.getUChar("tr_typ", 2); // 2 = BALLOON par défaut
     activeConfig.apid = prefs.getUChar("apid", 1);
     activeConfig.txInterval = prefs.getUShort("interval", DEFAULT_TX_INTERVAL);
+    activeConfig.enableUsbBinary = prefs.getUChar("bin_usb", 0); // 0 par défaut (désactivé)
+    activeConfig.enableDebugLogs = prefs.getUChar("dbg_log", 0); // 0 par défaut (désactivé)
     
     prefs.end();
     
@@ -53,6 +55,8 @@ void saveLoRaConfig() {
     prefs.putUChar("tr_typ", activeConfig.trackerType);
     prefs.putUChar("apid", activeConfig.apid);
     prefs.putUShort("interval", activeConfig.txInterval);
+    prefs.putUChar("bin_usb", activeConfig.enableUsbBinary);
+    prefs.putUChar("dbg_log", activeConfig.enableDebugLogs);
     
     prefs.end();
     

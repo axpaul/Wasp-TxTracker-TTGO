@@ -258,6 +258,36 @@ void handleConfigCommand(const char* cmd, Stream& responseStream) {
         responseStream.println("OK");
     }
 
+    // AT+DEBUG=0 ou AT+DEBUG=1 ou AT+DEBUG? (Logs de débogage lisibles sur USB)
+    else if (strncmp(cmd, "AT+DEBUG=", 9) == 0) {
+        int val = atoi(cmd + 9);
+        if (val == 0 || val == 1) {
+            activeConfig.enableDebugLogs = (uint8_t)val;
+            saveLoRaConfig();
+            responseStream.println("OK");
+        } else {
+            responseStream.println("ERROR: Debug mode must be 0 (Disabled) or 1 (Enabled)");
+        }
+    } else if (strcmp(cmd, "AT+DEBUG?") == 0) {
+        responseStream.printf("+DEBUG: %d\n", activeConfig.enableDebugLogs);
+        responseStream.println("OK");
+    }
+
+    // AT+BINUSB=0 ou AT+BINUSB=1 ou AT+BINUSB? (Émission trame binaire brute sur USB)
+    else if (strncmp(cmd, "AT+BINUSB=", 10) == 0) {
+        int val = atoi(cmd + 10);
+        if (val == 0 || val == 1) {
+            activeConfig.enableUsbBinary = (uint8_t)val;
+            saveLoRaConfig();
+            responseStream.println("OK");
+        } else {
+            responseStream.println("ERROR: Binary USB mode must be 0 (Disabled) or 1 (Enabled)");
+        }
+    } else if (strcmp(cmd, "AT+BINUSB?") == 0) {
+        responseStream.printf("+BINUSB: %d\n", activeConfig.enableUsbBinary);
+        responseStream.println("OK");
+    }
+
     // AT+TIME=<epoch> ou AT+TIME?
     else if (strncmp(cmd, "AT+TIME=", 8) == 0) {
         uint32_t epoch = strtoul(cmd + 8, NULL, 10);
@@ -289,6 +319,8 @@ void handleConfigCommand(const char* cmd, Stream& responseStream) {
         } else {
             responseStream.println("Hardware CRC       : OFF");
         }
+        responseStream.printf("USB Binary Out     : %s\n", activeConfig.enableUsbBinary ? "ON" : "OFF");
+        responseStream.printf("USB Debug Logs     : %s\n", activeConfig.enableDebugLogs ? "ON" : "OFF");
 #if ENABLE_BLUETOOTH
         responseStream.printf("Bluetooth Client   : %s\n", SerialBT.connected() ? "Connected" : "Disconnected");
 #endif
@@ -337,6 +369,10 @@ void handleConfigCommand(const char* cmd, Stream& responseStream) {
         responseStream.println("AT+CRC?          : Get Hardware CRC status");
         responseStream.println("AT+TIME=<epoch>  : Set RTC time (Unix Epoch)");
         responseStream.println("AT+TIME?         : Get RTC time (Unix Epoch)");
+        responseStream.println("AT+DEBUG=<0|1>   : Set USB Debug logs (0=OFF, 1=ON)");
+        responseStream.println("AT+DEBUG?        : Get USB Debug logs status");
+        responseStream.println("AT+BINUSB=<0|1>  : Set USB Binary Output (0=OFF, 1=ON)");
+        responseStream.println("AT+BINUSB?       : Get USB Binary Output status");
         responseStream.println("AT+CFG           : Get detailed configuration");
         responseStream.println("AT+SAVE          : Save current config to NVS");
         responseStream.println("AT+RESET         : Reset config to factory & reboot");
