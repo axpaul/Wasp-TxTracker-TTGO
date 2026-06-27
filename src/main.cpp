@@ -13,7 +13,6 @@
 
 // --- Définitions des Objets Globaux ---
 TinyGPSPlus gps;
-XPowersAXP192 PMU;
 ESP32Time rtc;
 QueueHandle_t gpsQueue = NULL;
 SemaphoreHandle_t radioMutex = NULL;
@@ -95,25 +94,11 @@ void setup() {
     Serial.printf("[SYSTEM] Flash Size:      %.1f MB\n", ESP.getFlashChipSize() / (1024.0 * 1024.0));
     Serial.println("=========================================");
     
-    // Initialiser le bus I2C et le PMU AXP192 (Gestion d'énergie)
-    Wire.begin(PMU_I2C_SDA_PIN, PMU_I2C_SCL_PIN);
-    Wire.setClock(PMU_I2C_FREQ_HZ);
-    
-    if (PMU.begin(Wire, AXP192_SLAVE_ADDRESS, PMU_I2C_SDA_PIN, PMU_I2C_SCL_PIN)) {
-        // LDO3 alimente le module GPS sur T-Beam V1.1 (3.3V requis)
-        PMU.enableLDO3();
-        PMU.setLDO3Voltage(3300);
-        
-        // LDO2 alimente le SX1276 LoRa sur T-Beam V1.1 (3.3V requis)
-        PMU.enableLDO2();
-        PMU.setLDO2Voltage(3300);
-        
-        // Activer DC1 pour l'alimentation générale
-        PMU.enableDC1();
-        
-        Serial.println("[PMU] AXP192 PMU Initialized: Enabled GPS (LDO3), LoRa (LDO2), and DC1 power.");
+    // Initialiser le PMU (Gestion d'énergie)
+    if (initPMU()) {
+        Serial.println("[PMU] PMU Initialized successfully.");
     } else {
-        Serial.println("[PMU] AXP192 PMU Initialization FAILED! Power check required.");
+        Serial.println("[PMU] PMU Initialization FAILED! Power check required.");
     }
     
     // Initialiser la communication UART pour le module GPS
@@ -191,10 +176,10 @@ void send_telemetry() {
     conv.f = (float)gps.speed.kmph();      memcpy(packet.spd, conv.b, 4);
     conv.f = (float)gps.course.deg();      memcpy(packet.cog, conv.b, 4);
 
-    // Mesures du PMU AXP192 (tension batterie et température interne)
-    packet.vbat = PMU.getBattVoltage();
+    // Mesures du PMU (tension batterie et température interne)
+    packet.vbat = getPMUBatteryVoltage();
     
-    float internalTemp = PMU.getTemperature();
+    float internalTemp = getPMUTemperature();
     packet.temp = (int16_t)(internalTemp * 100.0f); // Conversion en 1/100 °C
     
     packet.sats = (uint8_t)gps.satellites.value();

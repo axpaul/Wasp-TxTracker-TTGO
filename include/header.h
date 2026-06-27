@@ -21,13 +21,18 @@
 #define FW_VERSION "1.0.0"
 
 // ============================================================================
-// 1. GESTION DE L'ÉNERGIE (PMU - AXP192)
+// 1. GESTION DE L'ÉNERGIE (PMU - AXP192 / AXP2101)
 // ============================================================================
 #define PMU_I2C_SDA_PIN         21
 #define PMU_I2C_SCL_PIN         22
 #define PMU_I2C_FREQ_HZ         100000
+
 #ifndef AXP192_SLAVE_ADDRESS
 #define AXP192_SLAVE_ADDRESS    0x34
+#endif
+
+#ifndef AXP2101_SLAVE_ADDRESS
+#define AXP2101_SLAVE_ADDRESS   0x34
 #endif
 
 // ============================================================================
@@ -109,7 +114,11 @@ struct wasp_payload_t {
 // 6. DECLARATIONS DES VARIABLES GLOBALES (EXTERN)
 // ============================================================================
 extern TinyGPSPlus gps;
+#if defined(WASP_BOARD_V1_2)
+extern XPowersAXP2101 PMU;
+#else
 extern XPowersAXP192 PMU;
+#endif
 extern SX1276 radio;
 extern ESP32Time rtc;
 extern QueueHandle_t gpsQueue;
@@ -127,6 +136,11 @@ void initRadio();
 void send_telemetry();
 void checkSerialCommands();
 void handleConfigCommand(const char* cmd, Stream& responseStream);
+
+// Gestion de l'énergie (PMU)
+bool initPMU();
+uint16_t getPMUBatteryVoltage();
+float getPMUTemperature();
 
 // Fonctions utilitaires
 uint16_t calculate_crc16(const uint8_t *data, size_t len);
