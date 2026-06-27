@@ -89,7 +89,7 @@ void setup() {
     // Logs système de démarrage
     Serial.println("\n=========================================");
     Serial.printf("[SYSTEM] Wasp-TX Tracker Firmware v%s\n", FW_VERSION);
-    Serial.printf("[SYSTEM] Station ID (MAC): %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    Serial.printf("[SYSTEM] Straker ID (MAC): %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     Serial.printf("[SYSTEM] Chip Model:      %s (Rev %d)\n", ESP.getChipModel(), ESP.getChipRevision());
     Serial.printf("[SYSTEM] Flash Size:      %.1f MB\n", ESP.getFlashChipSize() / (1024.0 * 1024.0));
     Serial.println("=========================================");

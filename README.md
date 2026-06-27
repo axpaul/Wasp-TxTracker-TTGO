@@ -1,20 +1,42 @@
 # Wasp-TX Tracker Firmware
 
-Firmware embarqué pour le tracker GPS/LoRa **Wasp-TX**, conçu pour fonctionner sur les cartes **LilyGO TTGO T-Beam v1.1** (équipées du PMU AXP192) et **T-Beam v1.2** (équipées du PMU AXP2101). 
+**Wasp-TX** est un firmware open-source destiné au suivi télémétrique par radiofréquence (LoRa) et GNSS, conçu pour les applications de **rocketry amateur**. Il permet l'acquisition de données de positionnement et leur transmission vers une station sol.
+Ce firmware est développé pour les plateformes [LilyGO TTGO T-Beam](https://lilygo.cc/en-us/products/t-beam-meshtastic?variant=51708927312053)
+Wasp-TX est intégré à l'écosystème **NectarMC** pour le traitement et la visualisation des données :
 
-Ce projet est conçu pour fonctionner en synergie avec la station de réception **Nectar-RX** (télémétrie au format Nectar).
+* **Réception (Liaison descendante) :** Compatible avec la station **[Nectar-RX](https://github.com/axpaul/Nectar-RxStation-LoRa32)**, configurée pour la capture des trames LoRa.
+* **Traitement et visualisation :** Intégration avec la plateforme **[NectarMC](https://github.com/mlavardin/NectarMC)** pour le suivi en temps réel de la trajectoire et l'analyse post-vol.
 
 ---
 
 ## Fonctionnalités principales
 
-* **Géolocalisation précise** : Lecture en temps réel des coordonnées GPS, de l'altitude, de la vitesse, du cap et du temps UTC (U-blox NEO-M8N / NEO-6M).
+* **Géolocalisation** : Lecture en temps réel des coordonnées GPS, de l'altitude, de la vitesse, du cap et du temps UTC (U-blox NEO-M8N / NEO-6M).
 * **Télémétrie LoRa (Format Nectar)** : Envoi périodique des trames télémétriques compressées et sécurisées par CRC.
-* **Double cible matérielle** : Compilation conditionnelle via PlatformIO pour s'adapter automatiquement aux contrôleurs d'alimentation (PMU) AXP192 (v1.1) et AXP2101 (v1.2).
 * **Interface de configuration AT** :
   * Accessible via la liaison USB Série et via **Bluetooth Classique (SPP)**.
   * Commandes AT riches pour paramétrer la radio, l'identifiant du tracker, le type, la fréquence d'envoi, etc.
   * Sauvegarde automatique et persistante des réglages dans la mémoire flash non volatile (NVS).
+
+---
+
+## Aperçu du Matériel
+
+Voici les vues de la carte de développement ainsi que son brochage (Pinout) et ses dimensions :
+
+<p align="center">
+  <img src="Image/pin-diagram_1024x1024.jpg" alt="Pinout Diagram" width="500" />
+  <br>
+  <em>Brochage de la carte TTGO T-BEAM</em>
+</p>
+<p align="center">
+  <img src="Image/product-size_1024x1024.webp" alt="Board Dimensions" width="500" />
+  <br>
+  <em>Format de la carte TTGO T-BEAM</em>
+</p>
+
+- **[Télécharger  le Schéma PDF de la TTGO TBEAM V1.1](LilyGo_TBeam_V1.1.pdf)**
+- **[Télécharger  le Schéma PDF de la TTGO TBEAM V1.2](LilyGo_TBeam_V1.2.pdf)**
 
 ---
 
@@ -23,6 +45,19 @@ Ce projet est conçu pour fonctionner en synergie avec la station de réception 
 Le code s'adapte automatiquement selon l'environnement de compilation choisi :
 * **T-Beam v1.1** : Utilise la puce d'alimentation AXP192. Active automatiquement l'alimentation du GPS (LDO3 @ 3.3V) et du module LoRa (LDO2 @ 3.3V), ainsi que l'ADC de mesure de batterie et la détection d'accu.
 * **T-Beam v1.2** : Utilise la puce d'alimentation AXP2101. Active l'alimentation du GPS (ALDO3 @ 3.3V) et du LoRa (ALDO2 @ 3.3V).
+
+---
+
+## External Libraries
+
+Les dépendances du projet sont gérées via `platformio.ini`. Les bibliothèques suivantes sont requises pour le fonctionnement du firmware :
+
+| Library | Version | Purpose |
+| :--- | :--- | :--- |
+| **RadioLib** | `^6.0.0` | Gestion de la communication radio LoRa |
+| **ESP32Time** | `^2.0.0` | Gestion de l'horloge interne (RTC) |
+| **XPowersLib** | `^0.2.6` | Gestion de l'alimentation (PMU AXP192/AXP2101) |
+| **TinyGPSPlus** | `^1.0.3` | Décodage des trames de données GPS |
 
 ---
 
