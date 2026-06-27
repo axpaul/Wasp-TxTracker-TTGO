@@ -272,9 +272,44 @@
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Display the detailed configuration</div>
             </div>
 
+            <div class="at-command-item btn-at" data-cmd="AT+ID?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+ID?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query tracker ID (SSID Num)</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+TYPE?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+TYPE?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query tracker type (0=FX, 1=MF, 2=BALLOON, 3=OTHER)</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+INTERVAL?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+INTERVAL?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query transmission interval (sec)</div>
+            </div>
+
             <div class="at-command-item btn-at" data-cmd="AT+FREQ?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
               <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+FREQ?</div>
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query the active frequency</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+SF?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+SF?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query active Spreading Factor</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+BW?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+BW?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query active Bandwidth</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+POWER?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+POWER?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query LoRa TX power (dBm)</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+CRC?" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+CRC?</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Query CRC configuration status</div>
             </div>
 
             <div class="at-command-item btn-at" data-cmd="AT+DEBUG=1" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
@@ -282,9 +317,29 @@
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Enable extended debug logs</div>
             </div>
 
+            <div class="at-command-item btn-at" data-cmd="AT+DEBUG=0" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+DEBUG=0</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Disable extended debug logs</div>
+            </div>
+
             <div class="at-command-item btn-at" data-cmd="AT+BINUSB=1" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
               <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+BINUSB=1</div>
               <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Enable binary telemetry output</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+BINUSB=0" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+BINUSB=0</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Disable binary telemetry output</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+SAVE" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+SAVE</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Save config dynamically to NVS</div>
+            </div>
+
+            <div class="at-command-item btn-at" data-cmd="AT+RESET" style="cursor: pointer; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+              <div class="at-command-name" style="color: var(--color-cyan); font-weight: 600; font-family: var(--font-mono); margin-bottom: 0.2rem;">AT+RESET</div>
+              <div class="at-command-desc" style="color: var(--text-secondary); font-size: 0.8rem;">Factory reset and reboot station</div>
             </div>
 
           </div>
