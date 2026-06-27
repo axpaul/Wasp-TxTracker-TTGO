@@ -91,8 +91,10 @@ void sendNectarFrame(uint8_t ssid_type, uint8_t ssid_num, uint8_t apid, const ui
     frame[4 + len + 7] = (crc >> 8) & 0xFF;       // CRC16 Little-Endian (partie haute)
     frame[4 + len + 8] = '\n';                    // Saut de ligne
 
-    // 7. Émettre la trame complète en un seul appel (Série USB)
-    Serial.write(frame, 4 + len + 9);
+    // 7. Émettre la trame complète en un seul appel (Série USB) si activé dans la config
+    if (activeConfig.enableUsbBinary) {
+        Serial.write(frame, 4 + len + 9);
+    }
 
 #if ENABLE_BLUETOOTH
     // 8. Émettre également en Bluetooth si un client est connecté.
