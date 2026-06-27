@@ -414,7 +414,13 @@ document.getElementById('btn-clear-telemetry')?.addEventListener('click', () => 
 });
 
 // Radio settings controls
-document.getElementById('btn-read-cfg')?.addEventListener('click', () => { sendData('AT+CFG'); });
+document.getElementById('btn-read-cfg')?.addEventListener('click', () => {
+  sendData('AT+FREQ?');
+  setTimeout(() => sendData('AT+SF?'), 100);
+  setTimeout(() => sendData('AT+BW?'), 200);
+  setTimeout(() => sendData('AT+POWER?'), 300);
+  setTimeout(() => sendData('AT+CRC?'), 400);
+});
 document.getElementById('btn-write-cfg')?.addEventListener('click', () => {
   const freq = document.getElementById('input-freq').value;
   const sf = document.getElementById('select-sf').value;
