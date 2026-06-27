@@ -125,6 +125,9 @@ void outputTelemetryFrame(const wasp_payload_t& packet) {
         memcpy(conv.b, packet.spd, 4); spd = conv.f;
         memcpy(conv.b, packet.cog, 4); cog = conv.f;
 
+        uint8_t sats = packet.status & 0x1F;
+        uint8_t gps_fix = (packet.status >> 7) & 0x01;
+
         Serial.printf("[TX] UTC:%lu | POS:%.5f, %.5f | ALT:%.1fm | SPD:%.1fkm/h | COG:%.1f° | T:%.2f°C | SAT:%d | BAT:%dmV | STATUS:0x%02X\n", 
                       packet.utc, 
                       lat, 
@@ -133,9 +136,9 @@ void outputTelemetryFrame(const wasp_payload_t& packet) {
                       spd, 
                       cog,
                       (float)packet.temp / 100.0f, 
-                      packet.sats, 
+                      sats, 
                       packet.vbat,
-                      packet.status);
+                      gps_fix);
 
         Serial.print("[HEX] ");
         const uint8_t* p = (const uint8_t*)&packet;

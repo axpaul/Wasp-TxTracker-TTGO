@@ -134,8 +134,8 @@ function processBuffer(buf) {
         let payloadSize = buf[offset + 3];
         
         // Define length variants (v1.4.0 has 4-byte TS, v1.3.1 does not)
-        let frameLength140 = payloadSize + 13; // 1 + 2 + 1 + N + 1 + 1 + 4 + 2 + 1
-        let frameLength131 = payloadSize + 9;  // 1 + 2 + 1 + N + 1 + 1 + 2 + 1
+        let frameLength140 = payloadSize + 13; // MAGIC(1) + ID(2) + SIZE(1) + PAYLOAD(N) + RSSI(1) + SNR(1) + TS(4) + CRC(2) + \n(1) = N + 13
+        let frameLength131 = payloadSize + 9;  // MAGIC(1) + ID(2) + SIZE(1) + PAYLOAD(N) + RSSI(1) + SNR(1) + CRC(2) + \n(1) = N + 9
         
         let detectedLength = 0;
         let hasTimestamp = false;
@@ -154,8 +154,6 @@ function processBuffer(buf) {
           offset += detectedLength;
           continue;
         } else {
-          // If we have enough total bytes past the max possible frame size and no newline marker matched
-          // then it's corrupted binary data, we skip this 0xEB byte and let it fall through.
           let maxLen = Math.max(frameLength140, frameLength131);
           if (buf.length < offset + maxLen) {
             break; // Wait for more bytes
@@ -173,9 +171,7 @@ function processBuffer(buf) {
       let lineStr = new TextDecoder().decode(lineBuf).trim();
       if (lineStr.length > 0) {
         appendLog(lineStr);
-        if(lineStr.startsWith('[TX]')) {
-          parseTelemetryText(lineStr);
-        }
+        parseIncomingTextLine(lineStr);
       }
       offset = newlineIdx + 1;
     } else {
@@ -205,7 +201,6 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
   }
   
   // Verify CRC16-CCITT
-  // v1.4.0 CRC starts at index frame.length - 3
   let receivedCRC = dv.getUint16(frame.length - 3, true);
   let computedCRC = calculateCRC16(frame, frame.length - 3);
   let crcOK = (receivedCRC === computedCRC);
@@ -230,20 +225,24 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
     payload: payloadHex
   });
   
-  // Decrypt WASP payload if applicable and CRC is OK
-  if (payloadSize === 33 && crcOK) {
+  // Decrypt WASP payload if applicable (optimized to exactly 32 bytes!) and CRC is OK
+  if (payloadSize === 32 && crcOK) {
     let lat = dv.getFloat32(4 + 7, true);
     let lon = dv.getFloat32(4 + 11, true);
     let alt = dv.getFloat32(4 + 15, true);
     let spd = dv.getFloat32(4 + 19, true);
     let vbat = dv.getUint16(4 + 27, true);
     let temp = dv.getInt16(4 + 29, true);
-    let sats = dv.getUint8(4 + 32);
+    
+    // Status byte at offset 31 has GPS fix (bit 7) and Sats (bits 0-4)
+    let statusByte = dv.getUint8(4 + 31);
+    let sats = statusByte & 0x1F;
+    let gpsFix = (statusByte >> 7) & 0x01;
     
     // Update Stats widgets
     if (statAlt) statAlt.textContent = alt.toFixed(1);
     if (statSpd) statSpd.textContent = spd.toFixed(1);
-    if (statSat) statSat.textContent = sats;
+    if (statSat) statSat.textContent = `${sats} (Fix: ${gpsFix ? 'Oui' : 'Non'})`;
     if (statTemp) statTemp.textContent = (temp / 100).toFixed(1);
     if (statBat) statBat.textContent = (vbat / 1000).toFixed(2);
     if (statRssi) statRssi.textContent = `${rssi} / ${(snr/4).toFixed(1)}`;
@@ -274,6 +273,41 @@ function addNectarFrameToTable(f) {
   
   if (telemetryTbody.children.length > 50) {
     telemetryTbody.removeChild(telemetryTbody.lastChild);
+  }
+}
+
+function parseIncomingTextLine(line) {
+  if (line.startsWith('[TX]')) {
+    parseTelemetryText(line);
+    return;
+  }
+  
+  // Try to parse AT query feedback responses to dynamically synchronize the UI fields!
+  // Ex: "+FREQ: 868.000", "+SF: 9", "+BW: 125.00", "+POWER: 14", "+CRC: 1,0", "+ID: 1", "+TYPE: 2", "+INTERVAL: 1", "+APID: 10"
+  try {
+    if (line.startsWith('+FREQ:')) {
+      document.getElementById('input-freq').value = parseFloat(line.split(':')[1].trim());
+    } else if (line.startsWith('+SF:')) {
+      document.getElementById('select-sf').value = parseInt(line.split(':')[1].trim());
+    } else if (line.startsWith('+BW:')) {
+      let bwVal = parseFloat(line.split(':')[1].trim());
+      document.getElementById('select-bw').value = bwVal;
+    } else if (line.startsWith('+POWER:')) {
+      document.getElementById('input-power').value = parseInt(line.split(':')[1].trim());
+    } else if (line.startsWith('+CRC:')) {
+      let crcParts = line.split(':')[1].trim().split(',');
+      document.getElementById('select-crc').value = crcParts[0].trim();
+    } else if (line.startsWith('+ID:')) {
+      document.getElementById('input-tracker-id').value = parseInt(line.split(':')[1].trim());
+    } else if (line.startsWith('+TYPE:')) {
+      document.getElementById('select-tracker-type').value = parseInt(line.split(':')[1].trim());
+    } else if (line.startsWith('+INTERVAL:')) {
+      document.getElementById('input-interval').value = parseInt(line.split(':')[1].trim());
+    } else if (line.startsWith('+APID:')) {
+      document.getElementById('input-apid').value = parseInt(line.split(':')[1].trim());
+    }
+  } catch(e) {
+    console.error("Failed to parse AT response feedback:", e);
   }
 }
 
@@ -352,7 +386,7 @@ btnAtCmds.forEach(btn => {
   });
 });
 
-document.getElementById('btn-clear-terminal')?.addEventListener('click', () => {
+document.getElementById('btn-read-terminal')?.addEventListener('click', () => {
   terminalLogs.innerHTML = '';
 });
 
@@ -384,3 +418,22 @@ document.getElementById('btn-write-cfg')?.addEventListener('click', () => {
 });
 document.getElementById('btn-save-cfg')?.addEventListener('click', () => { sendData('AT+SAVE'); });
 document.getElementById('btn-reset-cfg')?.addEventListener('click', () => { sendData('AT+RESET'); });
+
+// Tracker settings controls
+document.getElementById('btn-read-tracker')?.addEventListener('click', () => {
+  sendData('AT+ID?');
+  setTimeout(() => sendData('AT+TYPE?'), 100);
+  setTimeout(() => sendData('AT+APID?'), 200);
+  setTimeout(() => sendData('AT+INTERVAL?'), 300);
+});
+document.getElementById('btn-write-tracker')?.addEventListener('click', () => {
+  const idVal = document.getElementById('input-tracker-id').value;
+  const typeVal = document.getElementById('select-tracker-type').value;
+  const apidVal = document.getElementById('input-apid').value;
+  const intervalVal = document.getElementById('input-interval').value;
+  
+  if(idVal !== '') sendData('AT+ID=' + idVal);
+  if(typeVal !== '') setTimeout(() => sendData('AT+TYPE=' + typeVal), 100);
+  if(apidVal !== '') setTimeout(() => sendData('AT+APID=' + apidVal), 200);
+  if(intervalVal !== '') setTimeout(() => sendData('AT+INTERVAL=' + intervalVal), 300);
+});

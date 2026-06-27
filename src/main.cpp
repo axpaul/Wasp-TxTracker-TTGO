@@ -182,12 +182,10 @@ void send_telemetry() {
     float internalTemp = getPMUTemperature();
     packet.temp = (int16_t)(internalTemp * 100.0f); // Conversion en 1/100 °C
     
-    packet.sats = (uint8_t)gps.satellites.value();
-    
-    // Construction du bitmask d'état
-    packet.status = 0;
+    // Construction du bitmask d'état combinant satellites et fix
+    packet.status = (uint8_t)(gps.satellites.value() & 0x1F); // Bits 0-4: Sats
     if (gps.location.isValid()) {
-        packet.status |= (1 << 0); // Bit 0: Fix GPS valide
+        packet.status |= (1 << 7); // Bit 7: Fix GPS valide
     }
     
     // Traiter et émettre les données de télémétrie sur les ports de communication série (USB/Bluetooth)

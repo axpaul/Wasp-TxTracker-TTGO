@@ -105,8 +105,7 @@ struct wasp_payload_t {
     uint8_t cog[4];     // Course (float)
     uint16_t vbat;      // Tension batterie (mV)
     int16_t temp;       // Température (en 1/100°C)
-    uint8_t status;     // Bitmask (Bit 0: GPS Fix valide)
-    uint8_t sats;       // Nombre de satellites
+    uint8_t status;     // Bit 7: GPS Fix, Bits 0-4: Sats count
 };                      // TOTAL = 32 octets
 #pragma pack(pop)
 

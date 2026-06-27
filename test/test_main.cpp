@@ -47,9 +47,9 @@ void test_crc16_calculation(void) {
  * @brief Test de la taille de la structure de charge utile Wasp-TX
  */
 void test_payload_struct_size(void) {
-    // La structure wasp_payload_t doit faire précisément 33 octets pour la radio.
+    // La structure wasp_payload_t doit faire précisément 32 octets pour la radio.
     // L'alignement est forcé par #pragma pack(push, 1).
-    TEST_ASSERT_EQUAL_INT(33, sizeof(wasp_payload_t));
+    TEST_ASSERT_EQUAL_INT(32, sizeof(wasp_payload_t));
 }
 
 /**
