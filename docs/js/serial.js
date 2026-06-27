@@ -19,6 +19,16 @@ const teleTemp = document.getElementById('tele-temp');
 const teleSat = document.getElementById('tele-sat');
 const teleBat = document.getElementById('tele-bat');
 
+// Check for Web Serial API support
+if (!("serial" in navigator)) {
+  connBadge.textContent = "Web Serial Non Supporté";
+  connBadge.style.background = "var(--color-danger)";
+  connBadge.title = "L'API Web Serial nécessite Chrome/Edge et un accès via HTTPS ou localhost (Live Server).";
+  btnConnect.disabled = true;
+  appendLog("ERREUR CRITIQUE: L'API Web Serial n'est pas disponible.");
+  appendLog("Assurez-vous d'utiliser Chrome/Edge et d'ouvrir ce site via HTTPS ou un serveur local (localhost), et non 'file:///'.");
+}
+
 btnConnect.addEventListener('click', async () => {
   try {
     port = await navigator.serial.requestPort();
@@ -33,20 +43,21 @@ btnConnect.addEventListener('click', async () => {
     btnSend.disabled = false;
 
     keepReading = true;
+    appendLog("--- Connexion Série Établie ---");
     readLoop();
   } catch (err) {
     console.error('Erreur de connexion série', err);
-    alert('Erreur lors de la connexion au port série. ' + err.message);
+    alert('Erreur lors de la connexion au port série : ' + err.message + '\n\n(Vérifiez que le port n\'est pas déjà ouvert dans un autre logiciel comme PlatformIO ou le Flasher.)');
   }
 });
 
 btnDisconnect.addEventListener('click', async () => {
   keepReading = false;
   if (reader) {
-    await reader.cancel();
+    await reader.cancel().catch(e => console.error("Reader cancel error:", e));
   }
   if (port) {
-    await port.close();
+    await port.close().catch(e => console.error("Port close error:", e));
   }
   
   connBadge.textContent = 'Série Déconnectée';
@@ -56,6 +67,7 @@ btnDisconnect.addEventListener('click', async () => {
   btnDisconnect.disabled = true;
   terminalInput.disabled = true;
   btnSend.disabled = true;
+  appendLog("--- Déconnecté ---");
 });
 
 async function readLoop() {
@@ -85,6 +97,7 @@ async function readLoop() {
     }
   } catch (error) {
     console.error('Erreur de lecture:', error);
+    appendLog("Erreur de lecture: " + error.message);
   } finally {
     reader.releaseLock();
   }
@@ -99,13 +112,20 @@ function appendLog(msg) {
 
 // Envoi de données
 async function sendData(data) {
-  if (!port || !port.writable) return;
-  const textEncoder = new TextEncoderStream();
-  const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
-  writer = textEncoder.writable.getWriter();
-  await writer.write(data + '\r\n');
-  writer.releaseLock();
-  appendLog('> ' + data);
+  if (!port || !port.writable) {
+    appendLog("Erreur: Port série non prêt.");
+    return;
+  }
+  try {
+    const encoder = new TextEncoder();
+    const writerBuffer = port.writable.getWriter();
+    await writerBuffer.write(encoder.encode(data + '\r\n'));
+    writerBuffer.releaseLock();
+    appendLog('> ' + data);
+  } catch(e) {
+    console.error('Erreur d\'envoi:', e);
+    appendLog("Erreur d'envoi: " + e.message);
+  }
 }
 
 terminalForm.addEventListener('submit', (e) => {
@@ -126,16 +146,15 @@ btnAtCmds.forEach(btn => {
 
 // Parsing telemetry
 function parseTelemetry(line) {
-  // Example: [TX] UTC:1782586735 | POS:43.60014, 1.47430 | ALT:201.5m | SPD:0.1km/h | COG:0.0° | T:38.10°C | SAT:11 | BAT:0mV | STATUS:0x01
   if(line.startsWith('[TX]')) {
     try {
       const parts = line.split('|').map(p => p.trim());
       parts.forEach(part => {
-        if(part.startsWith('ALT:')) teleAlt.textContent = part.split(':')[1].replace('m','');
-        if(part.startsWith('SPD:')) teleSpd.textContent = part.split(':')[1].replace('km/h','');
-        if(part.startsWith('T:')) teleTemp.textContent = part.split(':')[1].replace('°C','');
-        if(part.startsWith('SAT:')) teleSat.textContent = part.split(':')[1];
-        if(part.startsWith('BAT:')) teleBat.textContent = part.split(':')[1].replace('mV','');
+        if(part.startsWith('ALT:')) { if(teleAlt) teleAlt.textContent = part.split(':')[1].replace('m',''); }
+        if(part.startsWith('SPD:')) { if(teleSpd) teleSpd.textContent = part.split(':')[1].replace('km/h',''); }
+        if(part.startsWith('T:')) { if(teleTemp) teleTemp.textContent = part.split(':')[1].replace('°C',''); }
+        if(part.startsWith('SAT:')) { if(teleSat) teleSat.textContent = part.split(':')[1]; }
+        if(part.startsWith('BAT:')) { if(teleBat) teleBat.textContent = part.split(':')[1].replace('mV',''); }
         
         if(part.startsWith('POS:')) {
           const coords = part.split(':')[1].split(',');
