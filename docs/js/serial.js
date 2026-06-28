@@ -21,7 +21,7 @@ const statSpd = document.getElementById('stat-spd');
 const statSat = document.getElementById('stat-sat');
 const statTemp = document.getElementById('stat-temp');
 const statBat = document.getElementById('stat-bat');
-const statRssi = document.getElementById('stat-rssi');
+const statFix = document.getElementById('stat-fix');
 
 // Check for Web Serial API support
 if (!("serial" in navigator)) {
@@ -257,10 +257,12 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
   
   // Decrypt WASP payload if applicable (29 bytes after removing the 3 header bytes) and CRC is OK
   if (payloadSize === 29 && crcOK) {
-    let lat = dv.getFloat32(4 + 4, true);  // Offset 4 in payload (utc is 0)
+    let utc = dv.getUint32(4 + 0, true);   // Offset 0 in payload
+    let lat = dv.getFloat32(4 + 4, true);  // Offset 4 in payload
     let lon = dv.getFloat32(4 + 8, true);  // Offset 8 in payload
     let alt = dv.getFloat32(4 + 12, true); // Offset 12 in payload
     let spd = dv.getFloat32(4 + 16, true); // Offset 16 in payload
+    let cog = dv.getFloat32(4 + 20, true); // Offset 20 in payload
     let vbat = dv.getUint16(4 + 24, true); // Offset 24 in payload
     let temp = dv.getInt16(4 + 26, true); // Offset 26 in payload
     
@@ -272,14 +274,37 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
     // Update Stats widgets
     if (statAlt) statAlt.textContent = alt.toFixed(1);
     if (statSpd) statSpd.textContent = spd.toFixed(1);
-    if (statSat) statSat.textContent = `${sats} (Fix: ${gpsFix ? 'Oui' : 'Non'})`;
+    if (statSat) statSat.textContent = sats;
     if (statTemp) statTemp.textContent = (temp / 100).toFixed(1);
     if (statBat) statBat.textContent = (vbat / 1000).toFixed(2);
-    if (statRssi) statRssi.textContent = `${rssi} / ${(snr/4).toFixed(1)}`;
     
-    // Update Map position
+    if (statFix) {
+      const lang = localStorage.getItem('wasp_lang') || 'fr';
+      if (gpsFix) {
+        statFix.textContent = lang === 'en' ? 'Valid' : 'Valide';
+        statFix.style.color = '#10b981'; // Green color for valid fix
+      } else {
+        statFix.textContent = lang === 'en' ? 'No Fix' : 'Aucun Fix';
+        statFix.style.color = '#ef4444'; // Red color for no fix
+      }
+    }
+    
+    // Format UTC time (fallback to system TS if UTC not set)
+    const activeUtc = utc || tsEpoch;
+    const timeStr = new Date(activeUtc * 1000).toISOString().substring(11, 19);
+    
+    // Update Map position with trajectory and detailed popup content
     if (window.updateMap) {
-      window.updateMap(lat, lon);
+      window.updateMap(lat, lon, {
+        tracker: trackerSSID,
+        apid: apid,
+        alt: alt,
+        spd: spd,
+        cog: cog,
+        gpsFix: gpsFix,
+        sats: sats,
+        time: timeStr
+      });
     }
   }
 }
@@ -434,7 +459,7 @@ document.getElementById('btn-clear-telemetry')?.addEventListener('click', () => 
   if (statSat) statSat.textContent = '--';
   if (statTemp) statTemp.textContent = '--';
   if (statBat) statBat.textContent = '--';
-  if (statRssi) statRssi.textContent = '--';
+  if (statFix) statFix.textContent = '--';
 });
 
 // Radio settings controls

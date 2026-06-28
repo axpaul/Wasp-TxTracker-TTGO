@@ -224,8 +224,8 @@
             <span class="stat-lbl" data-i18n="lbl_battery">BATTERIE (V)</span>
           </div>
           <div class="stat-box">
-            <span class="stat-val" id="stat-rssi">--</span>
-            <span class="stat-lbl" data-i18n="lbl_rssi">RSSI / SNR</span>
+            <span class="stat-val" id="stat-fix">--</span>
+            <span class="stat-lbl" data-i18n="lbl_gps_fix">FIX GPS</span>
           </div>
         </div>
       </div>
@@ -398,9 +398,9 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
-  <script type="module" src="js/translate.js?v=1.0.5"></script>
-  <script type="module" src="js/app.js?v=1.0.5"></script>
-  <script type="module" src="js/serial.js?v=1.0.5"></script>
+  <script type="module" src="js/translate.js?v=1.0.6"></script>
+  <script type="module" src="js/app.js?v=1.0.6"></script>
+  <script type="module" src="js/serial.js?v=1.0.6"></script>
   <script>
     document.getElementById('board-select').addEventListener('change', (e) => {
       document.getElementById('install-button').setAttribute('manifest', e.target.value);
