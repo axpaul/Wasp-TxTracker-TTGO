@@ -86,3 +86,80 @@ uint16_t getPMUBatteryVoltage() {
 float getPMUTemperature() {
     return PMU.getTemperature();
 }
+
+/**
+ * @brief Configure les interruptions du bouton d'alimentation (PEKEY) du PMU.
+ */
+void setupPMUInterrupts() {
+    // Activer la détection des clics courts (et clics longs éventuels) sur le bouton d'alimentation
+    PMU.enableInterrupt(XPOWERS_PWR_BTN_CLICK_INT | XPOWERS_PWR_BTN_LONGPRESSED_INT);
+    PMU.clearIrqStatus();
+}
+
+/**
+ * @brief Vérifie si une action sur le bouton d'alimentation a eu lieu.
+ * @return true si une demande d'extinction a été détectée, false sinon.
+ */
+bool checkPMUPowerButton() {
+    if (PMU.getIrqStatus() != 0) {
+        bool clicked = PMU.isPekeyShortPressIrq() || PMU.isPekeyLongPressIrq();
+        PMU.clearIrqStatus(); // Toujours acquitter l'interruption
+        return clicked;
+    }
+    return false;
+}
+
+/**
+ * @brief Éteint proprement les périphériques LoRa/GPS et éteint le tracker via le PMU.
+ */
+void gracefulShutdown() {
+    Serial.println("\n[SYSTEM] Séquence d'extinction propre initiée par bouton...");
+    
+    // 1. Notification Bluetooth client (si actif et connecté)
+#if ENABLE_BLUETOOTH
+    if (SerialBT.hasClient()) {
+        SerialBT.println("[SYSTEM] Séquence d'extinction propre initiée...");
+        delay(100);
+    }
+#endif
+
+    // 2. Mettre la puce radio en sommeil profond pour économiser de l'énergie
+    Serial.println("[RADIO] Commande radio.sleep() envoyée.");
+    radio.sleep();
+
+    // 3. Extinction des canaux d'alimentation (GPS + LoRa) via le PMU
+    Serial.println("[PMU] Extinction des alimentations GPS et LoRa.");
+#if defined(WASP_BOARD_V1_2)
+    XPowersLibInterface *pPMU = &PMU;
+    pPMU->disablePowerOutput(XPOWERS_ALDO3); // GPS
+    pPMU->disablePowerOutput(XPOWERS_ALDO2); // LoRa
+#else
+    PMU.disableLDO3(); // GPS
+    PMU.disableLDO2(); // LoRa
+#endif
+
+    // 4. Feedback visuel de confirmation (Clignotement rapide LED utilisateur GPIO 4)
+    pinMode(4, OUTPUT);
+    for (int i = 0; i < 4; i++) {
+        digitalWrite(4, LOW);  // LED allumée (actif bas sur T-Beam)
+        delay(70);
+        digitalWrite(4, HIGH); // LED éteinte
+        delay(70);
+    }
+
+    Serial.println("[SYSTEM] PMU shutdown command. Goodbye!");
+    Serial.flush();
+    delay(50);
+    
+    // 5. Demande au PMU de couper l'alimentation globale
+    PMU.shutdown();
+
+    // Sûreté : Si connecté en USB, PMU.shutdown() ne coupera pas physiquement le circuit
+    // car le rail VBUS USB maintient la tension. On bascule l'ESP32 en sommeil profond à la place.
+    Serial.println("[SYSTEM] Alimentation USB détectée (shutdown indisponible). Entrée en Deep Sleep...");
+    Serial.flush();
+    
+    // Configurer le réveil par pression sur PEKEY ou User Button si nécessaire, ou dormir indéfiniment
+    esp_deep_sleep_start();
+}
+

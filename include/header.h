@@ -140,6 +140,10 @@ void handleConfigCommand(const char* cmd, Stream& responseStream);
 bool initPMU();
 uint16_t getPMUBatteryVoltage();
 float getPMUTemperature();
+void setupPMUInterrupts();
+bool checkPMUPowerButton();
+void gracefulShutdown();
+void enterStandbyMode();
 
 // Fonctions utilitaires
 uint16_t calculate_crc16(const uint8_t *data, size_t len);

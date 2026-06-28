@@ -97,9 +97,13 @@ void setup() {
     // Initialiser le PMU (Gestion d'énergie)
     if (initPMU()) {
         Serial.println("[PMU] PMU Initialized successfully.");
+        setupPMUInterrupts(); // Activer les interruptions pour le bouton d'alimentation PEKEY
     } else {
         Serial.println("[PMU] PMU Initialization FAILED! Power check required.");
     }
+    
+    // Initialiser le bouton utilisateur de la T-Beam (GPIO 38)
+    pinMode(38, INPUT_PULLUP);
     
     // Initialiser la communication UART pour le module GPS
     Serial1.begin(GPS_BAUDRATE, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
@@ -130,28 +134,76 @@ void setup() {
 }
 
 void loop() {
-    // Lecture continue des trames GPS du port UART1
+    // 1. Lecture continue des trames GPS du port UART1
     while (Serial1.available() > 0) {
         gps.encode(Serial1.read());
     }
 
-    // Synchronisation de l'heure RTC locale si les données GPS sont valides et mises à jour
+    // 2. Synchronisation de l'heure RTC locale si les données GPS sont valides et mises à jour
     if (gps.time.isUpdated() && gps.location.isValid()) {
         rtc.setTime(gps.time.second(), gps.time.minute(), gps.time.hour(), 
                     gps.date.day(), gps.date.month(), gps.date.year());
     }
 
-    // Déclencheur du timer pour envoyer la télémétrie
+    // 3. Déclencheur du timer pour envoyer la télémétrie
     if (send_trigger) {
         send_telemetry();
         send_trigger = false; 
     }
 
-    // Vérifier et traiter les commandes AT sur le port Série et le Bluetooth
+    // 4. Vérifier si le bouton d'alimentation du PMU a été pressé
+    if (checkPMUPowerButton()) {
+        gracefulShutdown();
+    }
+
+    // 5. Vérifier si le bouton utilisateur GPIO 38 est pressé (mise en veille Standby)
+    if (digitalRead(38) == LOW) {
+        delay(50); // anti-rebond simple
+        if (digitalRead(38) == LOW) {
+            // Attendre le relâchement du bouton pour éviter de se réveiller immédiatement
+            while (digitalRead(38) == LOW) { delay(10); }
+            enterStandbyMode();
+        }
+    }
+
+    // 6. Vérifier et traiter les commandes AT sur le port Série et le Bluetooth
     checkSerialCommands();
     
     // Petite pause pour relâcher le CPU
     delay(1);
+}
+
+/**
+ * @brief Coupe proprement les périphériques LoRa/GPS et bascule l'ESP32 en Deep Sleep (réveil par bouton utilisateur).
+ */
+void enterStandbyMode() {
+    Serial.println("\n[SYSTEM] Bouton utilisateur pressé. Entrée en veille Standby (Deep Sleep)...");
+    Serial.flush();
+    
+    // Clignotement lent pour notifier la mise en veille
+    pinMode(4, OUTPUT);
+    digitalWrite(4, LOW);  // LED allumée (actif bas)
+    delay(400);
+    digitalWrite(4, HIGH); // LED éteinte
+    
+    // 1. Mettre la puce radio en sommeil profond
+    radio.sleep();
+
+    // 2. Couper le GPS et la radio via le PMU pour maximiser l'économie d'énergie
+#if defined(WASP_BOARD_V1_2)
+    XPowersLibInterface *pPMU = &PMU;
+    pPMU->disablePowerOutput(XPOWERS_ALDO3); // GPS
+    pPMU->disablePowerOutput(XPOWERS_ALDO2); // LoRa
+#else
+    PMU.disableLDO3(); // GPS
+    PMU.disableLDO2(); // LoRa
+#endif
+
+    // 3. Configurer le réveil de l'ESP32 par appui sur le bouton utilisateur (GPIO 38)
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, 0); // Réveil sur niveau bas (0 = pressé)
+
+    // 4. Passer en sommeil profond
+    esp_deep_sleep_start();
 }
 
 /**
