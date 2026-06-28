@@ -77,7 +77,18 @@ document.addEventListener('DOMContentLoaded', () => {
             <b>Heure GPS:</b> ${details.time}
           </div>
         `;
-        marker.bindPopup(popupContent).openPopup();
+        
+        // Liaison ou mise à jour du contenu
+        const isFirst = !marker.getPopup();
+        marker.bindPopup(popupContent);
+        
+        // N'ouvre la popup automatiquement que pour le premier point.
+        // Ensuite, on ne la met à jour en direct que si elle est déjà ouverte par l'utilisateur.
+        if (isFirst) {
+          marker.openPopup();
+        } else if (marker.isPopupOpen()) {
+          marker.setPopupContent(popupContent);
+        }
       }
     }
   };
