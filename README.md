@@ -67,6 +67,34 @@ Wasp-TX intègre une gestion logique de l'alimentation de la carte TTGO T-Beam p
 
 ---
 
+## Structure du Code et Architecture
+
+Wasp-TX est conçu de manière modulaire pour séparer les responsabilités et garder le point d'entrée du programme propre et lisible.
+
+```mermaid
+graph TD
+    hdr["include/header.h<br><i>(Déclarations globales & brochage)</i>"] --> main["src/main.cpp<br><i>(Callbacks, Setup & Loop)</i>"]
+    hdr --> pmu["src/pmu.cpp<br><i>(Alimentation & Veille PMU)</i>"]
+    hdr --> radio["src/radio.cpp<br><i>(LoRa, Task & Modes)</i>"]
+    hdr --> serial["src/serial.cpp<br><i>(Télémétrie & Trames Nectar)</i>"]
+    hdr --> at["src/at_commands.cpp<br><i>(Traitement commandes AT)</i>"]
+
+    main --> pmu
+    main --> radio
+    main --> serial
+    main --> at
+```
+
+### Rôle et contenu de chaque fichier :
+*   **[include/header.h](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/include/header.h)** : Déclarations globales. Définit le brochage (pinout) des cartes T-Beam v1.1 et v1.2, la structure binaire de la charge utile WASP (32 octets), et exporte les variables d'état partagées (comme le mode actif `currentMode`).
+*   **[src/main.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/main.cpp)** : Séquenceur principal. Contient uniquement `setup()`, `loop()`, l'interruption du timer (`onTimer()`), et la boucle de contrôle avec anti-rebond pour le bouton utilisateur.
+*   **[src/pmu.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/pmu.cpp)** : Gestion d'énergie (PMU AXP192/AXP2101). Initialise le circuit d'alimentation, gère l'extinction logicielle complète (`gracefulShutdown()`) et la veille profonde (`enterStandbyMode()`).
+*   **[src/radio.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/radio.cpp)** : Émission radio. Gère l'initialisation de la radio SX1276, la tâche FreeRTOS `loraTask()` de transmission (avec modulation du clignotement de la LED bleue) et applique la configuration de puissance/débit via `configureMode()`.
+*   **[src/serial.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/serial.cpp)** : Communication série et télémétrie. Assemble le paquet WASP (avec encodage du mode actif sur le bit 5 du statut) et émet la trame NectarMC cryptée/CRC sur USB et Bluetooth.
+*   **[src/at_commands.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/at_commands.cpp)** : Interpréteur de commandes. Parse et exécute les commandes AT de configuration dynamique reçues sur l'USB ou le Bluetooth.
+
+---
+
 ## External Libraries
 
 Les dépendances du projet sont gérées via `platformio.ini`. Les bibliothèques suivantes sont requises pour le fonctionnement du firmware :
