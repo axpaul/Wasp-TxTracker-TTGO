@@ -198,13 +198,17 @@
             <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
           </select>
         </div>
-        <div class="button-group-grid" style="margin-top: 2rem;">
-          <script type="module" src="https://unpkg.com/esp-web-tools@9.4.0/dist/web/install-button.js?module"></script>
-          <esp-web-install-button id="install-button" manifest="manifest_v1_1.json">
-            <button slot="activate" class="btn btn-accent" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
-            <span slot="unsupported" class="text-danger">Navigateur non supporté.</span>
-            <span slot="not-allowed" class="text-danger">Connexion non autorisée.</span>
-          </esp-web-install-button>
+        <div class="button-group-row" style="margin-top: 1rem;">
+          <button id="btn-flash" class="btn btn-primary" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
+        </div>
+        
+        <div id="flash-progress-container" class="progress-container hidden" style="margin-top: 0.8rem;">
+          <div class="progress-bar-wrapper">
+            <div id="flash-progress-bar" class="progress-bar"></div>
+          </div>
+          <div class="progress-text">
+            <span data-i18n="flash_status_label">Statut :</span> <span id="lbl-flash-status" data-i18n="flash_status_waiting">Attente...</span> (<span id="lbl-flash-percent">0%</span>)
+          </div>
         </div>
       </div>
     </section>
@@ -409,7 +413,7 @@
   </main>
 
   <footer>
-    <p>&copy; 2026 Wasp-TX Project - Conçu et développé par <a href="https://github.com/axpaul" target="_blank" style="color: var(--color-primary); text-decoration: none; font-weight: 600;">Paul Miailhe (axpaul)</a></p>
+    <p>&copy; 2026 Wasp-TX Project - <span data-i18n="footer_credit">Conçu et développé par</span> <a href="https://github.com/axpaul" target="_blank" style="color: var(--color-primary); text-decoration: none; font-weight: 600;">Paul Miailhe (axpaul)</a> | <a href="https://github.com/axpaul/Wasp-TX-TTGO" target="_blank" style="color: var(--color-accent); text-decoration: none; font-weight: 600; margin: 0 5px;">Wasp-TX (GitHub)</a> | <a href="https://github.com/axpaul/Nectar-RxStation-LoRa32" target="_blank" style="color: var(--color-cyan); text-decoration: none; font-weight: 600; margin: 0 5px;">Nectar RX Station (GitHub)</a> | <a href="https://github.com/mlavardin/NectarMC" target="_blank" style="color: var(--color-primary); text-decoration: none; font-weight: 600; margin-left: 5px;">NectarMC</a></p>
   </footer>
 
   <!-- Leaflet JS -->
@@ -419,10 +423,6 @@
   <script type="module" src="js/app.js?v=1.1.3"></script>
   <script type="module" src="js/serial.js?v=1.1.3"></script>
   <script>
-    document.getElementById('board-select').addEventListener('change', (e) => {
-      document.getElementById('install-button').setAttribute('manifest', e.target.value);
-    });
-
     // Hover effects for AT commands
     document.querySelectorAll('.at-command-item').forEach(item => {
       item.addEventListener('mouseenter', () => item.style.background = 'rgba(255,255,255,0.05)');

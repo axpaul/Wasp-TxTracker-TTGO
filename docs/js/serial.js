@@ -1,3 +1,6 @@
+import { ESPLoader, Transport } from 'https://cdn.jsdelivr.net/npm/esptool-js@0.6.0/+esm';
+import { translations } from './translate.js';
+
 let port;
 let reader;
 let keepReading = true;
@@ -29,8 +32,8 @@ if (!("serial" in navigator)) {
   connBadge.style.background = "var(--color-danger)";
   connBadge.title = "L'API Web Serial nécessite Chrome/Edge et un accès via HTTPS ou localhost.";
   btnConnect.disabled = true;
-  appendLog("ERREUR CRITIQUE: L'API Web Serial n'est pas disponible.");
-  appendLog("Assurez-vous d'utiliser Chrome/Edge et d'ouvrir ce site via HTTPS ou un serveur local (localhost), et non 'file:///'.");
+  appendLog("ERREUR CRITIQUE: L'API Web Serial n'est pas disponible.", 'sys-out');
+  appendLog("Assurez-vous d'utiliser Chrome/Edge et d'ouvrir ce site via HTTPS ou un serveur local (localhost), et non 'file:///'.", 'sys-out');
 }
 
 function updateDynamicUI() {
@@ -38,20 +41,15 @@ function updateDynamicUI() {
   const isConnected = port && port.readable;
   
   if (isConnected) {
-    connBadge.textContent = lang === 'en' ? 'Serial Connected' : 'Série Connectée';
+    connBadge.textContent = getTranslation('conn_connected');
     const portInfo = port.getInfo();
-    let portDesc = lang === 'en' ? 'Connected' : 'Connecté';
-    if (portInfo.usbVendorId !== undefined) {
-      portDesc = lang === 'en'
-        ? `USB Device (VID: 0x${portInfo.usbVendorId.toString(16).toUpperCase()}, PID: 0x${portInfo.usbProductId.toString(16).toUpperCase()})`
-        : `Périphérique USB (VID: 0x${portInfo.usbVendorId.toString(16).toUpperCase()}, PID: 0x${portInfo.usbProductId.toString(16).toUpperCase()})`;
-    }
+    const portDesc = getFriendlyPortName(portInfo);
     const lblPortName = document.getElementById('lbl-port-name');
-    if (lblPortName) lblPortName.textContent = portDesc;
+    if (lblPortName) lblPortName.textContent = getTranslation('conn_port_prefix') + portDesc;
   } else {
-    connBadge.textContent = lang === 'en' ? 'Serial Disconnected' : 'Série Déconnectée';
+    connBadge.textContent = getTranslation('conn_disconnected');
     const lblPortName = document.getElementById('lbl-port-name');
-    if (lblPortName) lblPortName.textContent = lang === 'en' ? 'No device connected' : 'Aucun appareil connecté';
+    if (lblPortName) lblPortName.textContent = getTranslation('conn_no_device');
   }
 }
 
@@ -79,7 +77,7 @@ btnConnect.addEventListener('click', async () => {
     updateDynamicUI();
 
     keepReading = true;
-    appendLog("--- Connexion Série Établie ---");
+    appendLog("--- Connexion Série Établie ---", 'sys-out');
     readLoop();
   } catch (err) {
     console.error('Erreur de connexion série', err);
@@ -110,7 +108,7 @@ btnDisconnect.addEventListener('click', async () => {
   
   updateDynamicUI();
   
-  appendLog("--- Déconnecté ---");
+  appendLog("--- Déconnecté ---", 'sys-out');
 });
 
 async function readLoop() {
@@ -132,7 +130,7 @@ async function readLoop() {
     }
   } catch (error) {
     console.error('Erreur de lecture:', error);
-    appendLog("Erreur de lecture: " + error.message);
+    appendLog("Erreur de lecture: " + error.message, 'sys-out');
   } finally {
     reader.releaseLock();
   }
@@ -416,9 +414,12 @@ function parseTelemetryText(line) {
   }
 }
 
-function appendLog(msg) {
+function appendLog(msg, className = '') {
   const div = document.createElement('div');
   div.textContent = msg;
+  if (className) {
+    div.className = className;
+  }
   terminalLogs.appendChild(div);
   terminalLogs.scrollTop = terminalLogs.scrollHeight;
   
@@ -430,17 +431,17 @@ function appendLog(msg) {
 
 async function sendData(data) {
   if (!port || !port.writable) {
-    appendLog("Erreur: Port série non prêt.");
+    appendLog("Erreur: Port série non prêt.", 'sys-out');
     return;
   }
   const encoder = new TextEncoder();
   const writer = port.writable.getWriter();
   try {
     await writer.write(encoder.encode(data + '\r\n'));
-    appendLog('> ' + data);
+    appendLog('> ' + data, 'cmd-in');
   } catch(e) {
     console.error('Erreur d\'envoi:', e);
-    appendLog("Erreur d'envoi: " + e.message);
+    appendLog("Erreur d'envoi: " + e.message, 'sys-out');
   } finally {
     writer.releaseLock();
   }
@@ -519,3 +520,193 @@ document.getElementById('btn-write-tracker')?.addEventListener('click', () => {
   if(apidVal !== '') setTimeout(() => sendData('AT+APID=' + apidVal), 200);
   if(intervalVal !== '') setTimeout(() => sendData('AT+INTERVAL=' + intervalVal), 300);
 });
+
+// ============================================================================
+// Flasheur de Firmware Web (ESPTool) & Fonctions Helpers
+// ============================================================================
+const btnFlash = document.getElementById('btn-flash');
+const flashProgressContainer = document.getElementById('flash-progress-container');
+const flashProgressBar = document.getElementById('flash-progress-bar');
+const lblFlashStatus = document.getElementById('lbl-flash-status');
+const lblFlashPercent = document.getElementById('lbl-flash-percent');
+
+if (btnFlash) {
+  btnFlash.addEventListener('click', flashFirmware);
+}
+
+function getTranslation(key, replacements = {}) {
+  const lang = localStorage.getItem('wasp_lang') || 'fr';
+  let text = translations[lang]?.[key] || translations['fr']?.[key] || key;
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    text = text.replace(`{${placeholder}}`, value);
+  }
+  return text;
+}
+
+function getFriendlyPortName(portInfo) {
+  const vid = portInfo.usbVendorId;
+  const pid = portInfo.usbProductId;
+  const lang = localStorage.getItem('wasp_lang') || 'fr';
+  
+  if (vid === undefined || pid === undefined) {
+    return lang === 'en' ? "Unknown Serial Device" : "Appareil Série Inconnu";
+  }
+  
+  const hexVid = `0x${vid.toString(16).toUpperCase().padStart(4, '0')}`;
+  const hexPid = `0x${pid.toString(16).toUpperCase().padStart(4, '0')}`;
+  
+  const chipsets = {
+    "0x10C4": {
+      name: "Silicon Labs CP210x (USB-to-UART Bridge)",
+      pids: { "0xEA60": "CP2102/CP2109" }
+    },
+    "0x1A86": {
+      name: "WCH CH340/CH341 (USB-to-Serial)",
+      pids: { "0x7523": "CH340" }
+    },
+    "0x0403": {
+      name: "FTDI USB Serial",
+      pids: { "0x6001": "FT232R" }
+    },
+    "0x067B": {
+      name: "Prolific PL2303",
+      pids: { "0x2303": "PL2303 TA" }
+    },
+    "0x2341": {
+      name: "Arduino",
+      pids: {
+        "0x0043": "Uno R3",
+        "0x0001": "Uno",
+        "0x0042": "Mega 2560 R3"
+      }
+    },
+    "0x303A": {
+      name: "Espressif USB-JTAG-Serial",
+      pids: {
+        "0x1001": "ESP32-S3/C3 USB"
+      }
+    }
+  };
+  
+  const chipset = chipsets[hexVid];
+  if (chipset) {
+    const specificModel = chipset.pids[hexPid] || "";
+    return `${chipset.name}${specificModel ? ` (${specificModel})` : ''} [VID: ${hexVid}, PID: ${hexPid}]`;
+  }
+  
+  return `USB Device [VID: ${hexVid}, PID: ${hexPid}]`;
+}
+
+async function flashFirmware() {
+  const boardSelect = document.getElementById('board-select');
+  const boardVal = boardSelect ? boardSelect.value : 'manifest_v1_1.json';
+  
+  const dir = boardVal === 'manifest_v1_2.json' ? 'tbeam_v1_2' : 'tbeam_v1_1';
+  const bootloaderUrl = `binaries/${dir}/bootloader.bin`;
+  const partitionsUrl = `binaries/${dir}/partitions.bin`;
+  const firmwareUrl = `binaries/${dir}/firmware.bin`;
+  
+  const isConnected = port && port.readable;
+  if (isConnected) {
+    alert(getTranslation('alert_monitor_active_disconnect'));
+    return;
+  }
+  
+  if (btnFlash) btnFlash.disabled = true;
+  if (flashProgressContainer) flashProgressContainer.classList.remove('hidden');
+  if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_connecting');
+  if (lblFlashPercent) lblFlashPercent.textContent = "0%";
+  if (flashProgressBar) flashProgressBar.style.width = "0%";
+  
+  let esploader = null;
+  let transport = null;
+  
+  const customTerminal = {
+    clean() {
+      if (terminalLogs) terminalLogs.innerHTML = '';
+    },
+    writeLine(data) {
+      appendLog(data, 'sys-out');
+    },
+    write(data) {
+      appendLog(data, 'sys-out');
+    }
+  };
+
+  try {
+    appendLog(getTranslation('log_flash_port_select'), "sys-out");
+    const flashPort = await navigator.serial.requestPort();
+    
+    transport = new Transport(flashPort, true);
+    
+    esploader = new ESPLoader({
+      transport: transport,
+      terminal: customTerminal,
+      baudrate: 115200
+    });
+    
+    if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_syncing');
+    await esploader.main();
+    
+    if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_chip', { chip: esploader.chipName });
+    
+    appendLog(getTranslation('log_download_bin', { url: `${dir} binaries` }), "sys-out");
+    
+    const [bootloaderData, partitionsData, firmwareData] = await Promise.all([
+      fetchBinary(bootloaderUrl),
+      fetchBinary(partitionsUrl),
+      fetchBinary(firmwareUrl)
+    ]);
+    
+    if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_writing');
+    appendLog(getTranslation('log_write_flash_start'), "sys-out");
+    
+    const fileArray = [
+      { data: bootloaderData, address: 0x1000 },
+      { data: partitionsData, address: 0x8000 },
+      { data: firmwareData, address: 0x10000 }
+    ];
+    
+    await esploader.writeFlash({
+      fileArray: fileArray,
+      flashSize: 'keep',
+      flashMode: 'keep',
+      flashFreq: 'keep',
+      eraseAll: false,
+      compress: true,
+      reportProgress: (fileIndex, written, total) => {
+        const percent = Math.round((written / total) * 100);
+        if (lblFlashPercent) lblFlashPercent.textContent = `${percent}%`;
+        if (flashProgressBar) flashProgressBar.style.width = `${percent}%`;
+      }
+    });
+    
+    if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_success');
+    appendLog(getTranslation('log_update_complete_reboot'), "sys-out");
+    
+    await transport.setDTR(false);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await transport.setDTR(true);
+    
+  } catch (err) {
+    if (lblFlashStatus) lblFlashStatus.textContent = getTranslation('flash_status_failed');
+    appendLog(getTranslation('log_flash_error', { message: err.message }), 'sys-out');
+    console.error(err);
+  } finally {
+    if (btnFlash) btnFlash.disabled = false;
+    if (transport) {
+      try {
+        await transport.disconnect();
+      } catch (err) {}
+    }
+  }
+}
+
+async function fetchBinary(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(getTranslation('log_download_bin_failed', { status: response.statusText }));
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
+}
