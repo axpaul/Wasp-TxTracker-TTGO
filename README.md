@@ -92,8 +92,8 @@ Le firmware s'exécute de façon asynchrone sur l'ESP32 en combinant des interru
 ```mermaid
 graph TD
     %% Flux de contrôle
-    ISR["⏰ Interruption Timer (ISR)"] -->|Drapeau send_trigger| Loop["🔄 Boucle principale (loopTask, Prio 1)"]
-    Loop -->|Queue gpsQueue| Task["📡 Tâche LoRa (loraTask, Prio 1)"]
+    ISR["⏰ Timer (ISR)"] -->|Drapeau send_trigger| Loop["🔄 loopTask (Prio 1)"]
+    Loop -->|Queue gpsQueue| Task["📡 loraTask (Prio 1)"]
     Task -->|Mutex radioMutex| Radio["📻 Radio LoRa SX1276 (SPI)"]
 
     %% Entrées/Sorties physiques
