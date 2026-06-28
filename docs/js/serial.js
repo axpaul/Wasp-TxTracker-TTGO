@@ -245,17 +245,8 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
   const MISSION_TYPES = ["FX", "MF", "BALLOON", "OTHER"];
   let trackerSSID = `${MISSION_TYPES[ssid_type]}-${ssid_num}`;
   
-  // Add to NectarMC table
-  addNectarFrameToTable({
-    ts: new Date(tsEpoch * 1000).toISOString().replace('T', ' ').substring(0, 19),
-    tracker: trackerSSID,
-    apid: apid,
-    size: payloadSize,
-    rssi: rssi,
-    snr: (snr / 4).toFixed(2),
-    crc: crcOK ? '<span style="color: var(--color-success)">OK</span>' : '<span style="color: var(--color-danger)">KO</span>',
-    payload: payloadHex
-  });
+  let altVal = 'N/A';
+  let batVal = 'N/A';
   
   // Decrypt WASP payload if applicable (29 bytes after removing the 3 header bytes) and CRC is OK
   if (payloadSize === 29 && crcOK) {
@@ -272,6 +263,10 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
     let statusByte = dv.getUint8(4 + 28);
     let sats = statusByte & 0x1F;
     let gpsFix = (statusByte >> 7) & 0x01;
+    
+    // Formatter altitude et batterie
+    altVal = `${alt.toFixed(1)} m`;
+    batVal = `${(vbat / 1000).toFixed(2)} V`;
     
     // Update Stats widgets
     if (statAlt) statAlt.textContent = alt.toFixed(1);
@@ -309,6 +304,18 @@ function parseNectarFrame(frame, payloadSize, hasTimestamp) {
       });
     }
   }
+  
+  // Add to NectarMC table at the end (with Altitude and Battery values)
+  addNectarFrameToTable({
+    ts: new Date(tsEpoch * 1000).toISOString().replace('T', ' ').substring(0, 19),
+    tracker: trackerSSID,
+    apid: apid,
+    size: payloadSize,
+    alt: altVal,
+    bat: batVal,
+    crc: crcOK ? '<span style="color: var(--color-success)">OK</span>' : '<span style="color: var(--color-danger)">KO</span>',
+    payload: payloadHex
+  });
 }
 
 function addNectarFrameToTable(f) {
@@ -321,8 +328,8 @@ function addNectarFrameToTable(f) {
     <td style="color: var(--color-cyan); font-weight: 600;">${f.tracker}</td>
     <td>${f.apid}</td>
     <td>${f.size}</td>
-    <td>${f.rssi} dBm</td>
-    <td>${f.snr} dB</td>
+    <td>${f.alt}</td>
+    <td>${f.bat}</td>
     <td>${f.crc}</td>
     <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); text-align: left; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.payload}">${f.payload}</td>
   `;
