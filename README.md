@@ -48,6 +48,25 @@ Le code s'adapte automatiquement selon l'environnement de compilation choisi :
 
 ---
 
+## Gestion de l'Alimentation et Boutons (On / Off / Sleep)
+
+Wasp-TX intègre une gestion logique de l'alimentation de la carte TTGO T-Beam pour préserver la batterie et sécuriser son fonctionnement :
+
+* **Bouton d'Alimentation (PEKEY)** :
+  * **Allumage** : Un appui simple de ~1 seconde allume la carte et lance le tracker.
+  * **Extinction Propre (Software Power Off)** : Un clic ou un double-clic sur le bouton d'alimentation déclenche une séquence d'extinction logicielle complète :
+    1. Mise en sommeil de la puce radio LoRa (`radio.sleep()`) pour stopper toute consommation.
+    2. Extinction électrique complète du module GPS (LDO3 / ALDO3) et de la radio LoRa (LDO2 / ALDO2) par le PMU.
+    3. Signal de confirmation visuel (clignotement rapide 4 fois de la LED de la carte sur GPIO 4).
+    4. Extinction matérielle complète commandée au PMU (`PMU.shutdown()`).
+    * *Note : Si le câble USB reste branché, la tension VBUS maintient l'alimentation ; l'ESP32 bascule alors automatiquement en veille Deep Sleep.*
+
+* **Bouton Utilisateur (GPIO 38)** :
+  * **Mise en Standby (Mise en Veille)** : Un appui simple sur le bouton utilisateur éteint la radio/GPS et bascule immédiatement l'ESP32 en Deep Sleep (consommation < 15 µA).
+  * **Réveil (Wakeup)** : Un nouvel appui sur ce bouton utilisateur (GPIO 38) réveille instantanément la carte.
+
+---
+
 ## External Libraries
 
 Les dépendances du projet sont gérées via `platformio.ini`. Les bibliothèques suivantes sont requises pour le fonctionnement du firmware :
