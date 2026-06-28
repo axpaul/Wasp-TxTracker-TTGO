@@ -119,11 +119,15 @@
         </div>
 
         <div class="form-group">
-          <label for="input-power" data-i18n="radio_power">POWER (dBm):</label>
-          <div class="input-with-unit">
-            <input type="number" id="input-power" min="2" max="20" step="1" placeholder="Ex: 14" disabled>
-            <span class="unit">dBm</span>
-          </div>
+          <label for="select-power" data-i18n="radio_power">POWER (dBm):</label>
+          <select id="select-power" disabled>
+            <option value="2">2 dBm (Min)</option>
+            <option value="5">5 dBm</option>
+            <option value="10">10 dBm (Eco)</option>
+            <option value="14" selected>14 dBm (Default)</option>
+            <option value="17">17 dBm (Max continuous)</option>
+            <option value="20">20 dBm (Max boost)</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -411,9 +415,9 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
-  <script type="module" src="js/translate.js?v=1.1.1"></script>
-  <script type="module" src="js/app.js?v=1.1.1"></script>
-  <script type="module" src="js/serial.js?v=1.1.1"></script>
+  <script type="module" src="js/translate.js?v=1.1.2"></script>
+  <script type="module" src="js/app.js?v=1.1.2"></script>
+  <script type="module" src="js/serial.js?v=1.1.2"></script>
   <script>
     document.getElementById('board-select').addEventListener('change', (e) => {
       document.getElementById('install-button').setAttribute('manifest', e.target.value);

@@ -364,7 +364,7 @@ function parseIncomingTextLine(line) {
       let bwVal = parseFloat(line.split(':')[1].trim());
       document.getElementById('select-bw').value = bwVal;
     } else if (line.startsWith('+POWER:')) {
-      document.getElementById('input-power').value = parseInt(line.split(':')[1].trim());
+      document.getElementById('select-power').value = parseInt(line.split(':')[1].trim());
     } else if (line.startsWith('+CRC:')) {
       let crcParts = line.split(':')[1].trim().split(',');
       document.getElementById('select-crc').value = crcParts[0].trim();
@@ -490,7 +490,7 @@ document.getElementById('btn-write-cfg')?.addEventListener('click', () => {
   const freq = document.getElementById('input-freq').value;
   const sf = document.getElementById('select-sf').value;
   const bw = document.getElementById('select-bw').value;
-  const power = document.getElementById('input-power').value;
+  const power = document.getElementById('select-power').value;
   const crc = document.getElementById('select-crc').value;
   if(freq) sendData('AT+FREQ=' + freq);
   if(sf) sendData('AT+SF=' + sf);
