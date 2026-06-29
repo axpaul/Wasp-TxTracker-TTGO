@@ -164,11 +164,11 @@ Si vous souhaitez modifier le code ou compiler vous-même le projet, vous devez 
 #### 🛰️ Pour les versions 868 MHz (Standard)
 *   **Pour T-Beam v1.1 (AXP192)** :
     ```bash
-    pio run -e tbeam_v1_1 -t upload -t monitor
+    pio run -e tbeam_v1_1_868 -t upload -t monitor
     ```
 *   **Pour T-Beam v1.2 (AXP2101)** :
     ```bash
-    pio run -e tbeam_v1_2 -t upload -t monitor
+    pio run -e tbeam_v1_2_868 -t upload -t monitor
     ```
 
 #### 🛰️ Pour les versions 433 MHz
