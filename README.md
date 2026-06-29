@@ -95,24 +95,28 @@ graph TD
     main --> at
 ```
 
-### 📡 Contextes d'Exécution et Priorités (FreeRTOS Multicoeur)
-Le firmware tire pleinement parti de l'architecture **double cœur de l'ESP32** :
-*   **Cœur 0 (PRO_CPU)** : Dédié à la réception et au décodage rapide des caractères série du GPS via la tâche `gpsTask`. Cela garantit qu'aucune trame NMEA n'est perdue (zéro risque d'overflow du buffer série UART) même si l'application principale effectue des traitements lourds (comme l'envoi Bluetooth ou le traitement de commandes AT).
-*   **Cœur 1 (APP_CPU)** : Exécute la boucle principale Arduino (`loopTask`) et la tâche d'émission LoRa (`loraTask`), qui partagent les accès SPI et les variables de configuration.
+### 📡 Contextes d'Exécution et Multicoeur (FreeRTOS)
+Le firmware tire parti de l'architecture **double cœur de l'ESP32** pour séparer les tâches critiques (GPS) des tâches applicatives (Commandes AT, Bluetooth, boucle d'envoi).
+
+*   **Le Cœur 1 (APP_CPU)** exécute la boucle principale `loop()` (qui gère les boutons et parse les commandes AT reçues via USB et Bluetooth) ainsi que l'envoi LoRa.
+*   **Le Cœur 0 (PRO_CPU)** gère la pile Bluetooth système et la tâche prioritaire GPS en tâche de fond.
 
 ```mermaid
 graph TD
-    %% Flux de contrôle
-    ISR["⏰ Interruption Timer (ISR)"] -->|Drapeau send_trigger| Loop["🔄 loopTask (Prio 1, Coeur 1)"]
-    Loop -->|Queue gpsQueue| Task["📡 Tâche LoRa (loraTask, Prio 1, Coeur 1)"]
-    Task -->|Mutex radioMutex| Radio["📻 Radio LoRa SX1276 (SPI)"]
+    subgraph Coeur 0 [Cœur 0 : Système & GPS]
+        GPS_Task["🛰️ gpsTask (Prio 2)<br>Lit & décode le GPS UART"]
+        BT_Stack["🔵 Pile Bluetooth (Système)<br>Gère la liaison radio BT"]
+    end
 
-    %% Entrées/Sorties physiques
-    GPS_Task["🛰️ Tâche GPS (gpsTask, Prio 2, Coeur 0)"] -->|Ecriture sous gpsMutex| Shared["🔒 GPS Partagé (sharedGPSData)"]
-    Loop -->|Lecture sous gpsMutex| Shared
-    GPS_Task -->|Lit NMEA| GPS_HW["🛰️ GPS UART"]
-    Loop -->|Lit Clics/Extinction| Buttons["🔘 Boutons (GPIO 38 / PEKEY)"]
-    Task -->|Flash 1 ou 2 fois| LED["🔴 LED Rouge (GPIO 4)"]
+    subgraph Coeur 1 [Cœur 1 : Application, LoRa & AT]
+        Loop["🔄 loop() (Prio 1)<br>- Lit les boutons physiques<br>- Parse les commandes AT (USB & BT)<br>- Déclenche la télémétrie"]
+        Lora_Task["📡 loraTask (Prio 1)<br>Transmet les paquets LoRa"]
+    end
+
+    %% Communications inter-cœurs
+    GPS_Task -->|🔒 gpsMutex| Loop
+    BT_Stack <-->|Données Série Virtuelles| Loop
+    Loop -->|📨 gpsQueue| Lora_Task
 ```
 
 ### Rôle et contenu de chaque fichier :
