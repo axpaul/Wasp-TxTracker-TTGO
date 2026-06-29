@@ -12,12 +12,9 @@
 #include "header.h"
 
 // --- Définitions des Objets Globaux ---
-TinyGPSPlus gps;
 ESP32Time rtc;
 QueueHandle_t gpsQueue = NULL;
 SemaphoreHandle_t radioMutex = NULL;
-SemaphoreHandle_t gpsMutex = NULL;
-WaspGPSData sharedGPSData = {0};
 hw_timer_t *timer = NULL;
 volatile bool send_trigger = false;
 volatile uint8_t currentMode = 0; // 0 = Vol (Normal), 1 = Eco (Lent)
@@ -26,51 +23,10 @@ volatile uint8_t currentMode = 0; // 0 = Vol (Normal), 1 = Eco (Lent)
 BluetoothSerial SerialBT;
 #endif
 
-// --- Fonctions d'Interruption et de Tâche ---
+// --- Fonctions d'Interruption ---
 
 void IRAM_ATTR onTimer() {
     send_trigger = true;
-}
-
-/**
- * @brief Tâche FreeRTOS dédiée à la lecture et au décodage asynchrone du module GPS.
- */
-void gpsTask(void *pvParameters) {
-    while (1) {
-        bool encoded = false;
-        while (Serial1.available() > 0) {
-            if (gps.encode(Serial1.read())) {
-                encoded = true;
-            }
-        }
-        
-        if (encoded) {
-            if (xSemaphoreTake(gpsMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
-                sharedGPSData.latitude = gps.location.lat();
-                sharedGPSData.longitude = gps.location.lng();
-                sharedGPSData.altitude = gps.altitude.meters();
-                sharedGPSData.speed = gps.speed.kmph();
-                sharedGPSData.course = gps.course.deg();
-                sharedGPSData.satellites = gps.satellites.value();
-                sharedGPSData.fix = gps.location.isValid();
-                
-                if (gps.time.isValid()) {
-                    sharedGPSData.hour = gps.time.hour();
-                    sharedGPSData.minute = gps.time.minute();
-                    sharedGPSData.second = gps.time.second();
-                    
-                    // Synchronisation de l'heure RTC locale
-                    if (gps.time.isUpdated() && gps.location.isValid()) {
-                        rtc.setTime(gps.time.second(), gps.time.minute(), gps.time.hour(), 
-                                    gps.date.day(), gps.date.month(), gps.date.year());
-                    }
-                }
-                xSemaphoreGive(gpsMutex);
-            }
-        }
-        
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
 }
 
 /**
