@@ -125,26 +125,45 @@ Les dépendances du projet sont gérées via `platformio.ini`. Les bibliothèque
 
 ---
 
+## Firmwares Précompilés (Binaires)
+
+Si vous ne souhaitez pas compiler le code source vous-même, des fichiers binaires prêts à flasher sont mis à votre disposition dans le dossier **[binary/](./binary)**.
+
+| Fichier | Cible Matérielle | Fréquence LoRa | Puce d'Alimentation (PMU) |
+| :--- | :--- | :--- | :--- |
+| **[Wasp-TX_v1.1_868MHz.bin](./binary/Wasp-TX_v1.1_868MHz.bin)** | LilyGO T-Beam v1.1 | **868 MHz** | AXP192 |
+| **[Wasp-TX_v1.2_868MHz.bin](./binary/Wasp-TX_v1.2_868MHz.bin)** | LilyGO T-Beam v1.2 | **868 MHz** | AXP2101 |
+| **[Wasp-TX_v1.1_433MHz.bin](./binary/Wasp-TX_v1.1_433MHz.bin)** | LilyGO T-Beam v1.1 | **433 MHz** | AXP192 |
+| **[Wasp-TX_v1.2_433MHz.bin](./binary/Wasp-TX_v1.2_433MHz.bin)** | LilyGO T-Beam v1.2 | **433 MHz** | AXP2101 |
+
+Vous pouvez flasher ces fichiers directement à l'aide d'outils comme le [Flash Download Tool d'Espressif](https://www.espressif.com/en/support/download/other-tools) ou l'installateur web ESP Web Flasher.
+
+---
+
 ## Compilation et Téléversement (PlatformIO)
 
-Ouvrez le projet dans VS Code avec l'extension PlatformIO, puis sélectionnez l'environnement approprié :
+Ouvrez le projet dans VS Code avec l'extension PlatformIO, puis compilez l'environnement de votre choix :
 
-### 1. Pour la T-Beam v1.1 (AXP192)
+### 1. Versions 868 MHz (Défaut)
 ```bash
-# Compilation
+# Pour la T-Beam v1.1 (AXP192)
 pio run -e tbeam_v1_1
-
-# Téléversement et moniteur série
 pio run -e tbeam_v1_1 -t upload -t monitor
+
+# Pour la T-Beam v1.2 (AXP2101)
+pio run -e tbeam_v1_2
+pio run -e tbeam_v1_2 -t upload -t monitor
 ```
 
-### 2. Pour la T-Beam v1.2 (AXP2101)
+### 2. Versions 433 MHz
 ```bash
-# Compilation
-pio run -e tbeam_v1_2
+# Pour la T-Beam v1.1 (AXP192)
+pio run -e tbeam_v1_1_433
+pio run -e tbeam_v1_1_433 -t upload -t monitor
 
-# Téléversement et moniteur série
-pio run -e tbeam_v1_2 -t upload -t monitor
+# Pour la T-Beam v1.2 (AXP2101)
+pio run -e tbeam_v1_2_433
+pio run -e tbeam_v1_2_433 -t upload -t monitor
 ```
 
 ---

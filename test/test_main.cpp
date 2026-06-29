@@ -61,7 +61,11 @@ void test_payload_struct_size(void) {
  */
 void test_default_config_constants(void) {
     TEST_ASSERT_EQUAL_INT(1, DEFAULT_TX_INTERVAL);
+#ifdef FREQ_433
+    TEST_ASSERT_EQUAL_FLOAT(433.0f, DEFAULT_FREQUENCY);
+#else
     TEST_ASSERT_EQUAL_FLOAT(869.525f, DEFAULT_FREQUENCY);
+#endif
     TEST_ASSERT_EQUAL_INT(8, DEFAULT_SF);
     TEST_ASSERT_EQUAL_FLOAT(250.0f, DEFAULT_BW);
 }

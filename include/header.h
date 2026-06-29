@@ -50,18 +50,24 @@
 #define LORA_DIO0_PIN           26
 
 // ============================================================================
-// 4. CONFIGURATIONS PAR DÉFAUT (Standard EU868)
+// 4. CONFIGURATIONS PAR DÉFAUT
 // ============================================================================
-#define DEFAULT_FREQUENCY       869.525f
+#ifdef FREQ_433
+#define DEFAULT_FREQUENCY       433.0f  // Fréquence active par défaut (433.0 MHz)
+#define FREQ_MIN                430.0f  // Fréquence min autorisée
+#define FREQ_MAX                440.0f  // Fréquence max autorisée
+#else
+#define DEFAULT_FREQUENCY       869.525f // Fréquence active par défaut (869.525 MHz)
+#define FREQ_MIN                863.0f  // Fréquence min autorisée
+#define FREQ_MAX                870.0f  // Fréquence max autorisée
+#endif
+
 #define DEFAULT_SF              8
 #define DEFAULT_BW              250.0f
 #define DEFAULT_CR              5       // Coding Rate 4/5
 #define DEFAULT_SYNC_WORD       0x12
 #define DEFAULT_POWER           17      // Puissance en dBm (17 dBm par défaut)
 #define DEFAULT_TX_INTERVAL     1       // Intervalle de transmission (secondes)
-
-#define FREQ_MIN                863.0f
-#define FREQ_MAX                870.0f
 
 #define NECTAR_MAGIC            0xEB
 
