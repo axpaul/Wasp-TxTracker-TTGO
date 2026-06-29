@@ -11,8 +11,20 @@
 // Définition de l'objet Radio et de la configuration active
 SX1276 radio = new Module(LORA_CS_PIN, LORA_DIO0_PIN, LORA_RST_PIN);
 LoRaConfig activeConfig;
+SemaphoreHandle_t loraTxSemaphore = NULL;
 
 static Preferences prefs;
+
+/**
+ * @brief Routine d'interruption (ISR) appelée lors de la fin d'une transmission LoRa (front montant sur DIO0).
+ */
+void IRAM_ATTR loraTxISR() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(loraTxSemaphore, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR();
+    }
+}
 
 /**
  * @brief Charge la configuration radio depuis la mémoire NVS de l'ESP32.
@@ -96,8 +108,20 @@ void initRadio() {
             radio.setBandwidth(activeConfig.bandwidth);
             radio.setSpreadingFactor(activeConfig.spreadingFactor);
             radio.setSyncWord(DEFAULT_SYNC_WORD);
-            radio.setCRC(activeConfig.crcEnable, activeConfig.crcMode);
             radio.setCurrentLimit(120); // 120 mA limit
+            
+            // Initialiser le sémaphore binaire pour les interruptions TX
+            loraTxSemaphore = xSemaphoreCreateBinary();
+            
+            // Attacher l'action d'interruption sur la broche DIO0
+            radio.setDio0Action(loraTxISR, RISING);
+
+            // Activer ou désactiver le CRC en fonction de la configuration
+            if (activeConfig.crcEnable) {
+                radio.setCRC(true);
+            } else {
+                radio.setCRC(false);
+            }
             
             Serial.printf("[RADIO] SX1276 Initialized! Freq: %.3f MHz, SF: %d, BW: %.1f kHz, Power: %d dBm, CRC: %s (%s)\n",
                           activeConfig.frequency, 
@@ -143,15 +167,32 @@ void loraTask(void *pvParameters) {
                 digitalWrite(4, HIGH);
             }
 
-            // Attente du semaphore pour utiliser le bus SPI de la radio
+            // Lancer la transmission non-bloquante (asynchrone)
             if (xSemaphoreTake(radioMutex, portMAX_DELAY) == pdTRUE) {
-                state = radio.transmit((uint8_t*)&data, sizeof(wasp_payload_t));
+                state = radio.startTransmit((uint8_t*)&data, sizeof(wasp_payload_t));
                 xSemaphoreGive(radioMutex);
             }
             
             if (state == RADIOLIB_ERR_NONE) {
-                // Succes de transmission silencieux
-            } else {
+                // Attendre la fin de la transmission via le sémaphore d'interruption
+                // Timeout de sécurité réglé à 2 secondes (2000 ms)
+                if (xSemaphoreTake(loraTxSemaphore, pdMS_TO_TICKS(2000)) == pdTRUE) {
+                    if (xSemaphoreTake(radioMutex, portMAX_DELAY) == pdTRUE) {
+                        state = radio.finishTransmit();
+                        xSemaphoreGive(radioMutex);
+                    }
+                } else {
+                    Serial.println("[RADIO] Non-blocking TX Timeout! Forcing Standby.");
+                    state = RADIOLIB_ERR_TX_TIMEOUT;
+                    // Forcer la radio à sortir du mode émission si bloquée
+                    if (xSemaphoreTake(radioMutex, portMAX_DELAY) == pdTRUE) {
+                        radio.standby();
+                        xSemaphoreGive(radioMutex);
+                    }
+                }
+            }
+            
+            if (state != RADIOLIB_ERR_NONE) {
                 Serial.printf("[RADIO] Transmission FAILED, code: %d\n", state);
             }
         }

@@ -21,6 +21,7 @@ BluetoothSerial SerialBT;
 QueueHandle_t gpsQueue = NULL;
 SemaphoreHandle_t radioMutex = NULL;
 SemaphoreHandle_t gpsMutex = NULL;
+SemaphoreHandle_t loraTxSemaphore = NULL;
 WaspGPSData sharedGPSData = {0};
 TinyGPSPlus gps;
 volatile uint8_t currentMode = 0;

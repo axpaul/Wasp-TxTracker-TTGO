@@ -143,6 +143,7 @@ extern ESP32Time rtc;
 extern QueueHandle_t gpsQueue;
 extern SemaphoreHandle_t radioMutex;
 extern SemaphoreHandle_t gpsMutex;
+extern SemaphoreHandle_t loraTxSemaphore;
 extern WaspGPSData sharedGPSData;
 extern LoRaConfig activeConfig;
 extern volatile bool send_trigger;
