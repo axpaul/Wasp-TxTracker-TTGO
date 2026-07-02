@@ -45,37 +45,67 @@
         <button id="btn-lang-fr" class="btn-lang active">FR</button>
         <button id="btn-lang-en" class="btn-lang">EN</button>
       </div>
-      <div id="conn-badge" class="badge disconnected" data-i18n="conn_disconnected">Série Déconnectée</div>
+      <div id="conn-badge" class="badge disconnected" data-i18n="conn_disconnected">Déconnecté</div>
     </div>
   </header>
 
   <main class="dashboard-grid">
-    <!-- 1. PANNEAU DE CONNEXION SÉRIE -->
-    <section class="card connection-panel">
-      <h2 data-i18n="conn_title">🔌 USB Serial Link</h2>
-      <div class="card-content">
-        <div class="form-group">
-          <label for="baudrate" data-i18n="conn_baudrate">Vitesse de transmission (Baud) :</label>
-          <select id="baudrate">
-            <option value="9600">9600</option>
-            <option value="19200">19200</option>
-            <option value="38400">38400</option>
-            <option value="57600">57600</option>
-            <option value="115200" selected>115200</option>
-            <option value="230400">230400</option>
-            <option value="460800">460800</option>
-            <option value="921600">921600</option>
-          </select>
+    <!-- Left Column: Serial Link + Web Flasher -->
+    <div class="column-stack">
+      <!-- 1. PANNEAU DE CONNEXION SÉRIE -->
+      <section class="card connection-panel">
+        <h2 data-i18n="conn_title">🔌 USB Serial Link</h2>
+        <div class="card-content">
+          <div class="form-group">
+            <label for="baudrate" data-i18n="conn_baudrate">Vitesse de transmission (Baud) :</label>
+            <select id="baudrate">
+              <option value="9600">9600</option>
+              <option value="19200">19200</option>
+              <option value="38400">38400</option>
+              <option value="57600">57600</option>
+              <option value="115200" selected>115200</option>
+              <option value="230400">230400</option>
+              <option value="460800">460800</option>
+              <option value="921600">921600</option>
+            </select>
+          </div>
+          <div class="button-group-row" style="margin-top: 1.5rem;">
+            <button id="btn-connect" class="btn btn-primary" data-i18n="conn_connect">Connexion</button>
+            <button id="btn-disconnect" class="btn btn-danger" data-i18n="conn_disconnect" disabled>Déconnexion</button>
+          </div>
+          <div class="port-info text-secondary" style="margin-top: 1rem;">
+            <span data-i18n="conn_status_label">Statut :</span> <span id="lbl-port-name" data-i18n="conn_no_device">Aucun appareil connecté</span>
+          </div>
         </div>
-        <div class="button-group-row" style="margin-top: 1.5rem;">
-          <button id="btn-connect" class="btn btn-primary" data-i18n="conn_connect">Connexion</button>
-          <button id="btn-disconnect" class="btn btn-danger" data-i18n="conn_disconnect" disabled>Déconnexion</button>
+      </section>
+
+      <!-- 3. FLASHER ESP WEB TOOLS -->
+      <section class="card config-panel">
+        <h2 data-i18n="flasher_title">⚡ Web Flasher Wasp-TX</h2>
+        <div class="card-content">
+          <p class="description" style="margin-bottom: 1rem;" data-i18n="flasher_desc">Flashez directement le firmware sur la carte ESP32 depuis le navigateur.</p>
+          <div class="form-group">
+            <label for="board-select" data-i18n="flasher_board">Sélection de la carte :</label>
+            <select id="board-select">
+              <option value="manifest_v1_1.json" selected>T-Beam V1.1 (AXP192)</option>
+              <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
+            </select>
+          </div>
+          <div class="button-group-row" style="margin-top: 1rem;">
+            <button id="btn-flash" class="btn btn-primary" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
+          </div>
+          
+          <div id="flash-progress-container" class="progress-container hidden" style="margin-top: 0.8rem;">
+            <div class="progress-bar-wrapper">
+              <div id="flash-progress-bar" class="progress-bar"></div>
+            </div>
+            <div class="progress-text">
+              <span data-i18n="flash_status_label">Statut :</span> <span id="lbl-flash-status" data-i18n="flash_status_waiting">Attente...</span> (<span id="lbl-flash-percent">0%</span>)
+            </div>
+          </div>
         </div>
-        <div class="port-info text-secondary" style="margin-top: 1rem;">
-          <span data-i18n="conn_status_label">Statut :</span> <span id="lbl-port-name" data-i18n="conn_no_device">Aucun appareil connecté</span>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- 2. CONFIGURATION DE LA RADIO (AT COMMANDS) -->
     <section class="card config-panel">
@@ -147,7 +177,7 @@
       </div>
     </section>
 
-    <!-- 4. TRACKER SETTINGS (AT COMMANDS) -->
+    <!-- 3. TRACKER SETTINGS (AT COMMANDS) -->
     <section class="card config-panel">
       <h2 data-i18n="tracker_title">🛸 Tracker Settings</h2>
       <div class="card-content">
@@ -182,33 +212,6 @@
         <div class="button-group-grid" style="margin-top: 1.5rem;">
           <button id="btn-read-tracker" class="btn btn-secondary" data-i18n="btn_refresh" disabled>REFRESH</button>
           <button id="btn-write-tracker" class="btn btn-accent" data-i18n="btn_write" disabled>APPLY</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. FLASHER ESP WEB TOOLS -->
-    <section class="card config-panel">
-      <h2 data-i18n="flasher_title">⚡ Web Flasher Wasp-TX</h2>
-      <div class="card-content">
-        <p class="description" style="margin-bottom: 1rem;" data-i18n="flasher_desc">Flashez directement le firmware sur la carte ESP32 depuis le navigateur.</p>
-        <div class="form-group">
-          <label for="board-select" data-i18n="flasher_board">Sélection de la carte :</label>
-          <select id="board-select">
-            <option value="manifest_v1_1.json" selected>T-Beam V1.1 (AXP192)</option>
-            <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
-          </select>
-        </div>
-        <div class="button-group-row" style="margin-top: 1rem;">
-          <button id="btn-flash" class="btn btn-primary" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
-        </div>
-        
-        <div id="flash-progress-container" class="progress-container hidden" style="margin-top: 0.8rem;">
-          <div class="progress-bar-wrapper">
-            <div id="flash-progress-bar" class="progress-bar"></div>
-          </div>
-          <div class="progress-text">
-            <span data-i18n="flash_status_label">Statut :</span> <span id="lbl-flash-status" data-i18n="flash_status_waiting">Attente...</span> (<span id="lbl-flash-percent">0%</span>)
-          </div>
         </div>
       </div>
     </section>

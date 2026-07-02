@@ -988,3 +988,10 @@ footer {
   animation: wasp-marker-pulse-anim 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
+/* Stacking helper to align cards without stretching */
+.column-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
