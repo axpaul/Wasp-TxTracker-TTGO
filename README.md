@@ -135,6 +135,19 @@ Les firmwares de l'écosystème exploitent les interruptions matérielles sur la
 *   **[src/serial.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/serial.cpp)** : Communication série et télémétrie. Assemble de manière thread-safe le paquet WASP (avec encodage du mode actif sur le bit 5 du statut) et émet la trame NectarMC cryptée/CRC sur USB et Bluetooth.
 *   **[src/at_commands.cpp](file:///c:/Users/paulm/OneDrive/Documents/PlatformIO/Projects/Wasp-TX/src/at_commands.cpp)** : Interpréteur de commandes. Parse et exécute les commandes AT de configuration dynamique reçues sur l'USB ou le Bluetooth.
 
+## External Libraries
+
+Les dépendances du projet sont gérées via `platformio.ini`. Les bibliothèques suivantes sont requises pour le fonctionnement du firmware :
+
+| Library | Version | Purpose |
+| :--- | :--- | :--- |
+| **RadioLib** | `^6.0.0` | Gestion de la communication radio LoRa |
+| **ESP32Time** | `^2.0.0` | Gestion de l'horloge interne (RTC) |
+| **XPowersLib** | `^0.2.6` | Gestion de l'alimentation (PMU AXP192/AXP2101) |
+| **TinyGPSPlus** | `^1.0.3` | Décodage des trames de données GPS |
+
+---
+
 ## Installation et Programmation du Firmware
 
 Deux méthodes s'offrent à vous pour programmer votre carte TTGO T-Beam : utiliser les fichiers binaires précompilés (rapide), ou compiler le code source à l'aide de PlatformIO.
