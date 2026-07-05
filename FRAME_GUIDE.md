@@ -190,27 +190,24 @@ Si le CRC materiel est desactive (`AT+CRC=0`), l'emetteur calcule un CRC16 logic
 
 ## 5. Trame Serie NectarMC (Tracker / Station → PC)
 
-Lorsque le tracker emet ses donnees vers le PC (via `AT+BINUSB=1` sur USB ou via Bluetooth SPP), les donnees sont encapsulees dans une trame binaire NectarMC.
-
-> [!IMPORTANT]
-> **Difference avec la station sol Nectar-RX** : La trame serie emise directement par Wasp-TX **n'inclut pas** le champ `gs_flag` (Ground Station Flag) du protocole NectarMC complet. Le header Wasp-TX fait **4 octets** (MAGIC + Id_mission + payload_size). Lorsque la station sol Nectar-RX relaie un paquet vers NectarMC, elle le reencapsule dans le format complet a **5 octets** de header (avec `gs_flag`).
+Lorsque le tracker emet ses donnees vers le PC (via `AT+BINUSB=1` sur USB ou via Bluetooth SPP), les donnees sont encapsulees dans la trame binaire NectarMC standard de type **cote bord** (direct tracker).
 
 ### Format de trame serie Wasp-TX (emission directe USB/BT)
 
-**Taille totale** : `4 + N + 2 + 4 + 2 + 1` = **13 + N** octets.
-Pour Wasp-TX, N = **29** octets, soit une trame de **42 octets** au total.
+**Taille totale** : `5 + N + 2` octets.
+Pour Wasp-TX, N = **29** octets, soit une trame de **36 octets** au total.
 
 ```
-+-------+------------+---------+------ ... ------+------+------+------------+-----------+------+
-| Byte  |   0        |  1..2   |    3  |  4      ...   3+N    | 4+N  | 5+N  | 6+N..9+N  |10+N..11+N|12+N |
-+-------+------------+---------+-------+------ ... ------+------+------+------------+-----------+------+
-| Champ | MAGIC      |Id_missi.| pay_  |      PAYLOAD         | RSSI | SNR  | Timestamp  |  CRC16   |  LF  |
-|       |            |         | len   |      (N octets)      |      |      |            |          |      |
-+-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
-| Type  | uint8      |uint16 LE| uint8 |     uint8[]          | int8 | int8 | uint32 LE  |uint16 LE | char |
-| Valeur|   0xEB     |         |  29   |                      |   0  |   0  |            |          | 0x0A |
-+-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
-  HEADER (4 octets)                                              METADATA (6 octets)     CTRL (2B)  TERM
++-------+------------+---------+---------+---------+------ ... ------+------------+
+| Byte  |   0        |  1..2   |    3    |    4    |  5      ...  4+N  | 5+N .. 6+N |
++-------+------------+---------+---------+---------+------ ... ------+------------+
+| Champ | MAGIC      |Id_missi.| gs_flag | pay_    |      PAYLOAD    |   CRC16    |
+|       |            |         |         | len     |      (N octets) |  (LE 16b)  |
++-------+------------+---------+---------+---------+-----------------+------------+
+| Type  | uint8      |uint16 LE| uint8   | uint8   |     uint8[]     |  uint16    |
+| Valeur|   0xEB     |         |  0x00   |  29     |                 |            |
++-------+------------+---------+---------+---------+-----------------+------------+
+  HEADER (5 octets)                                                    CTRL (2B)
 ```
 
 ### Alignement de la structure de vol et de la trame serie
@@ -218,30 +215,26 @@ Pour Wasp-TX, N = **29** octets, soit une trame de **42 octets** au total.
 La structure de vol `wasp_payload_t` (32 octets) commence deja par les 3 octets d'en-tete standard NectarMC (`magic` sur 1 octet et `id_mission` sur 2 octets). 
 
 Pour construire la trame serie NectarMC :
-1. Le **Header Serie** reprend le `magic` et l'`id_mission` situes en tete de la structure `wasp_payload_t`.
+1. Le **Header Serie** reprend le `magic` et l'`id_mission` situes en tete de la structure `wasp_payload_t`, et y insere le `gs_flag` (fixe a `0x00`) et le `payload_size` (fixe a `29`).
 2. La **Payload Serie** de 29 octets commence a l'offset 3 de la structure `wasp_payload_t` (c'est-a-dire le champ `utc`). Cela evite de repeter le Magic Byte et l'identifiant de mission sur la liaison serie (ce qui dupliquerait inutilement 3 octets sur le port USB/Bluetooth).
 
 ```c
 // Extrait de serial.cpp — outputTelemetryFrame()
 sendNectarFrame(packet.id_mission,
                 (const uint8_t*)&packet + 3,       // Payload serie = octets 3 a 31 (UTC -> Status)
-                sizeof(wasp_payload_t) - 3,        // Taille N = 29 octets
-                0, 0);                             // RSSI=0, SNR=0 (emission locale)
+                sizeof(wasp_payload_t) - 3);       // Taille N = 29 octets
 ```
 
 ### Description detaillee des champs serie
 
 | Position | Type | Nom | Description |
 | :--- | :--- | :--- | :--- |
-| Octet 0 | `uint8_t` | `MAGIC` | Toujours `0xEB`. Marqueur de synchronisation aerospatial (IRIG-106). |
+| Octet 0 | `uint8_t` | `MAGIC` | Toujours `0xEB`. Marqueur de synchronisation. |
 | Octets 1–2 | `uint16_t` | `Id_mission` | Identifiant de mission encode en **Little-Endian**. Regroupe SSID et APID (voir section 2). |
-| Octet 3 | `uint8_t` | `payload_size` | Longueur N de la charge utile en octets (29 pour Wasp-TX). |
-| Octets 4 a 3+N | `uint8_t[]` | `Payload` | Donnees utiles : octets 3 a 31 de `wasp_payload_t` (UTC → Status). |
-| Octet 4+N | `int8_t` | `RSSI` | Force du signal LoRa recu en dBm (`0` si emis localement par le tracker). |
-| Octet 5+N | `int8_t` | `SNR` | Rapport signal/bruit LoRa en dB (`0` si emis localement). |
-| Octets 6+N a 9+N | `uint32_t` | `Timestamp` | Horodatage Epoch Unix (4 octets, Little-Endian). Heure RTC du dispositif emetteur. |
-| Octets 10+N a 11+N | `uint16_t` | `CRC16` | CRC16-CCITT, Little-Endian. Calcule sur les octets `0` a `9+N` inclus. |
-| Octet 12+N | `char` | `LF` | Caractere de fin de ligne `\n` (`0x0A`). |
+| Octet 3 | `uint8_t` | `gs_flag` | Ground Station Flag. Fixe a `0x00` en direct tracker (pas de RSSI/SNR dans le footer). |
+| Octet 4 | `uint8_t` | `payload_size` | Longueur N de la charge utile en octets (29 pour Wasp-TX). |
+| Octets 5 a 4+N | `uint8_t[]` | `Payload` | Donnees utiles : octets 3 a 31 de `wasp_payload_t` (UTC → Status). |
+| Octets 5+N a 6+N | `uint16_t` | `CRC16` | CRC16-CCITT, Little-Endian. Calcule sur le Header et la Payload (octets `0` a `4+N` inclus). |
 
 ### Format de trame serie Nectar-RX (station sol → PC)
 

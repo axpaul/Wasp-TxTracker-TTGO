@@ -50,52 +50,43 @@ uint16_t calculate_crc16(const uint8_t *data, size_t len) {
  * - Le CRC16-CCITT.
  * Émet le tout sur USB (Serial) et Bluetooth (SerialBT) si configuré et connecté.
  */
-void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr) {
-    // 1. Limiter la longueur brute de LoRa à 250 octets max pour laisser de la place aux métriques et au timestamp
+void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len) {
+    // 1. Limiter la longueur brute à 250 octets
     if (len > 250) {
         len = 250;
     }
 
-    // 2. Préparer le Header NectarMC (4 octets)
-    uint8_t header[4];
-    header[0] = NECTAR_MAGIC;
-    header[1] = id_mission & 0xFF;              // Encodage en Little-Endian (partie basse)
-    header[2] = (id_mission >> 8) & 0xFF;       // Encodage en Little-Endian (partie haute)
-    header[3] = (uint8_t)(len & 0xFF);          // Taille de la payload série brute (données utiles LoRa)
+    // 2. Préparer le Header NectarMC Côté Bord (5 octets)
+    uint8_t header[5];
+    header[0] = NECTAR_MAGIC;                     // 0xEB (Magic)
+    header[1] = id_mission & 0xFF;                // LE low
+    header[2] = (id_mission >> 8) & 0xFF;         // LE high
+    header[3] = 0x00;                             // gs_flag = 0 (Émission directe par le tracker)
+    header[4] = (uint8_t)(len & 0xFF);            // payload_size
 
-    // 4. Assembler le header, le payload LoRa, les métriques RSSI/SNR et le Timestamp dans la trame
-    uint8_t frame[275];
-    memcpy(frame, header, 4);
+    // 3. Assembler le header et la payload
+    uint8_t frame[260];
+    memcpy(frame, header, 5);
     if (len > 0 && payload != nullptr) {
-        memcpy(frame + 4, payload, len);
+        memcpy(frame + 5, payload, len);
     }
-    frame[4 + len] = (uint8_t)rssi;
-    frame[4 + len + 1] = (uint8_t)snr;
 
-    // Ajout du Timestamp Unix Epoch (4 octets - Little-Endian)
-    uint32_t epoch = rtc.getEpoch();
-    frame[4 + len + 2] = epoch & 0xFF;
-    frame[4 + len + 3] = (epoch >> 8) & 0xFF;
-    frame[4 + len + 4] = (epoch >> 16) & 0xFF;
-    frame[4 + len + 5] = (epoch >> 24) & 0xFF;
+    // 4. Calculer le CRC16 sur l'ensemble [Header + Payload]
+    uint16_t crc = calculate_crc16(frame, 5 + len);
 
-    // 5. Calculer le CRC16 sur l'ensemble [Header + Payload LoRa + RSSI + SNR + Timestamp]
-    uint16_t crc = calculate_crc16(frame, 4 + len + 2 + 4);
+    // 5. Écrire le CRC16 en Little-Endian (2 octets)
+    frame[5 + len] = crc & 0xFF;
+    frame[5 + len + 1] = (crc >> 8) & 0xFF;
 
-    // 6. Écrire le CRC16 et le saut de ligne directement dans le buffer
-    frame[4 + len + 6] = crc & 0xFF;              // CRC16 Little-Endian (partie basse)
-    frame[4 + len + 7] = (crc >> 8) & 0xFF;       // CRC16 Little-Endian (partie haute)
-    frame[4 + len + 8] = '\n';                    // Saut de ligne
-
-    // 7. Émettre la trame complète en un seul appel (Série USB) si activé dans la config
+    // 6. Émettre la trame complète (Série USB) si activé dans la config
     if (activeConfig.enableUsbBinary) {
-        Serial.write(frame, 4 + len + 9);
+        Serial.write(frame, 5 + len + 2);
     }
 
 #if ENABLE_BLUETOOTH
-    // 8. Émettre également en Bluetooth si un client est connecté.
+    // 7. Émettre également en Bluetooth si connecté
     if (SerialBT.connected()) {
-        SerialBT.write(frame, 4 + len + 9);
+        SerialBT.write(frame, 5 + len + 2);
     }
 #endif
 }
@@ -107,7 +98,7 @@ void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len, in
 void outputTelemetryFrame(const wasp_payload_t& packet) {
     // Émettre la trame formatée Nectar (USB et/ou Bluetooth)
     // On passe le reste des données à partir de l'octet 3 (utc) pour éviter la duplication des en-têtes
-    sendNectarFrame(packet.id_mission, (const uint8_t*)&packet + 3, sizeof(wasp_payload_t) - 3, 0, 0);
+    sendNectarFrame(packet.id_mission, (const uint8_t*)&packet + 3, sizeof(wasp_payload_t) - 3);
 }
 
 /**

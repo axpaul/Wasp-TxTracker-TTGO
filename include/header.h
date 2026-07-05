@@ -173,7 +173,7 @@ void configureMode(uint8_t mode);
 
 // Fonctions utilitaires
 uint16_t calculate_crc16(const uint8_t *data, size_t len);
-void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr);
+void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len);
 void outputTelemetryFrame(const wasp_payload_t& packet);
 
 #endif // WASP_BOARD_H
