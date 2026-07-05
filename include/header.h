@@ -103,11 +103,11 @@ struct wasp_payload_t {
     uint8_t magic;      // Magic Byte (0xEB)
     uint16_t id_mission;// SSID & APID compactés en Little-Endian (type sur 2 bits, id sur 8 bits, apid sur 6 bits)
     uint32_t utc;       // Unix Epoch time
-    uint8_t lat[4];     // Latitude (float)
-    uint8_t lon[4];     // Longitude (float)
-    uint8_t alt[4];     // Altitude (float)
-    uint8_t spd[4];     // Vitesse (float)
-    uint8_t cog[4];     // Course (float)
+    float lat;          // Latitude (IEEE 754 float)
+    float lon;          // Longitude (IEEE 754 float)
+    float alt;          // Altitude (IEEE 754 float)
+    float spd;          // Vitesse (IEEE 754 float)
+    float cog;          // Course (IEEE 754 float)
     uint16_t vbat;      // Tension batterie (mV)
     int16_t temp;       // Température (en 1/100°C)
     uint8_t status;     // Bit 7: GPS Fix, Bit 5: Mode Eco, Bits 0-4: Sats count

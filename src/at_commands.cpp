@@ -65,7 +65,17 @@ void checkSerialCommands() {
  * @param cmd Tampon de la ligne de commande reçue.
  * @param responseStream Flux de réponse (Serial ou SerialBT).
  */
-void handleConfigCommand(const char* cmd, Stream& responseStream) {
+void handleConfigCommand(const char* cmd_in, Stream& responseStream) {
+    // 1. Créer une copie locale en majuscules pour rendre le parseur insensible à la casse
+    char cmd_upper[64];
+    size_t i = 0;
+    while (cmd_in[i] != '\0' && i < sizeof(cmd_upper) - 1) {
+        cmd_upper[i] = toupper((unsigned char)cmd_in[i]);
+        i++;
+    }
+    cmd_upper[i] = '\0';
+    const char* cmd = cmd_upper; // Masque le paramètre d'entrée pour simplifier le reste du code
+
     // Ignorer silencieusement si la commande ne commence pas par "AT"
     if (strncmp(cmd, "AT", 2) != 0) {
         return;

@@ -82,6 +82,10 @@ void setup() {
     // Initialiser le bouton utilisateur de la T-Beam (GPIO 38)
     pinMode(38, INPUT_PULLUP);
     
+    // Initialiser la LED utilisateur rouge de la T-Beam (GPIO 4) - active LOW
+    pinMode(4, OUTPUT);
+    digitalWrite(4, HIGH); // Éteinte par défaut
+    
     // Initialiser la communication UART pour le module GPS
     Serial1.begin(GPS_BAUDRATE, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
     Serial.println("[GPS] UART Interface initialized.");

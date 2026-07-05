@@ -113,10 +113,6 @@ void send_telemetry() {
     packet.id_mission = (ssid << 6) | (activeConfig.apid & 0x3F);
     packet.utc = (uint32_t)rtc.getEpoch();
     
-    // Remplissage des coordonnees GPS (conversion float en tableau d'octets)
-    union FloatConverter { float f; uint8_t b[4]; };
-    FloatConverter conv;
-    
     double lat = 0.0;
     double lon = 0.0;
     double alt = 0.0;
@@ -136,11 +132,11 @@ void send_telemetry() {
         xSemaphoreGive(gpsMutex);
     }
     
-    conv.f = (float)lat;    memcpy(packet.lat, conv.b, 4);
-    conv.f = (float)lon;    memcpy(packet.lon, conv.b, 4);
-    conv.f = (float)alt;    memcpy(packet.alt, conv.b, 4);
-    conv.f = (float)spd;    memcpy(packet.spd, conv.b, 4);
-    conv.f = (float)cog;    memcpy(packet.cog, conv.b, 4);
+    packet.lat = (float)lat;
+    packet.lon = (float)lon;
+    packet.alt = (float)alt;
+    packet.spd = (float)spd;
+    packet.cog = (float)cog;
 
     // Mesures du PMU (tension batterie et temperature interne)
     packet.vbat = getPMUBatteryVoltage();

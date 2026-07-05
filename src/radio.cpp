@@ -150,7 +150,6 @@ void loraTask(void *pvParameters) {
             uint8_t mode = (data.status >> 5) & 0x01;
             
             // Clignotement de la LED rouge (GPIO 4, actif bas) sur transmission
-            pinMode(4, OUTPUT);
             if (mode == 0) {
                 // Mode Vol : 1 flash court
                 digitalWrite(4, LOW);
@@ -203,7 +202,6 @@ void loraTask(void *pvParameters) {
  * @brief Configure la puissance radio et l'alarme du timer selon le mode de fonctionnement.
  */
 void configureMode(uint8_t mode) {
-    pinMode(4, OUTPUT);
     if (mode == 0) {
         // Mode Vol (Normal)
         Serial.println("[SYSTEM] Mode VOL selectionne (Performance)");
