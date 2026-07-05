@@ -27,6 +27,10 @@ TinyGPSPlus gps;
 volatile uint8_t currentMode = 0;
 volatile bool send_trigger = false;
 hw_timer_t *timer = NULL;
+LoRaConfig activeConfig;
+
+// Inclure directement l'implémentation série/CRC pour le tester de manière isolée
+#include "../src/serial.cpp"
 
 void setUp(void) {
     // Code d'initialisation exécuté avant chaque test
