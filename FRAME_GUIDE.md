@@ -213,16 +213,20 @@ Pour Wasp-TX, N = **29** octets, soit une trame de **42 octets** au total.
   HEADER (4 octets)                                              METADATA (6 octets)     CTRL (2B)  TERM
 ```
 
-### De-duplication de l'en-tete radio
+### Alignement de la structure de vol et de la trame serie
 
-Les champs `id`, `apid` et `type` de la `wasp_payload_t` ne sont **pas** retransmis dans la payload serie. Ils sont compactes dans le champ `Id_mission` du header NectarMC. La payload serie commence donc a l'offset 3 de `wasp_payload_t` (le champ `utc`).
+La structure de vol `wasp_payload_t` (32 octets) commence deja par les 3 octets d'en-tete standard NectarMC (`magic` sur 1 octet et `id_mission` sur 2 octets). 
+
+Pour construire la trame serie NectarMC :
+1. Le **Header Serie** reprend le `magic` et l'`id_mission` situes en tete de la structure `wasp_payload_t`.
+2. La **Payload Serie** de 29 octets commence a l'offset 3 de la structure `wasp_payload_t` (c'est-a-dire le champ `utc`). Cela evite de repeter le Magic Byte et l'identifiant de mission sur la liaison serie (ce qui dupliquerait inutilement 3 octets sur le port USB/Bluetooth).
 
 ```c
 // Extrait de serial.cpp — outputTelemetryFrame()
 sendNectarFrame(packet.id_mission,
-                (const uint8_t*)&packet + 3,       // Payload = octets 3 a 31 de wasp_payload_t
-                sizeof(wasp_payload_t) - 3,         // N = 29 octets
-                0, 0);                              // RSSI=0, SNR=0 (emission locale)
+                (const uint8_t*)&packet + 3,       // Payload serie = octets 3 a 31 (UTC -> Status)
+                sizeof(wasp_payload_t) - 3,        // Taille N = 29 octets
+                0, 0);                             // RSSI=0, SNR=0 (emission locale)
 ```
 
 ### Description detaillee des champs serie
