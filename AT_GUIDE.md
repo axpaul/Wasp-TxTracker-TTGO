@@ -1,4 +1,4 @@
-# Guide Complet des Commandes AT — Wasp-TX v1.0.6
+# Guide Complet des Commandes AT — Wasp-TX v1.1.0
 
 Ce document détaille toutes les commandes AT disponibles sur le tracker **Wasp-TX**.
 

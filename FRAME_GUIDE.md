@@ -90,7 +90,7 @@ Conformement au protocole NectarMC, le champ `type` correspond aux 2 bits de poi
 
 ## 2. Trame Radio LoRa (Tracker bord → Station sol)
 
-Le tracker Wasp-TX transmet la structure `wasp_payload_t` **integralement** sur les ondes LoRa. La charge utile radio fait exactement **32 octets** et contient son propre en-tete de routage (`id`, `apid`, `type`), suivi des donnees de telemetrie.
+Le tracker Wasp-TX transmet la structure `wasp_payload_t` **integralement** sur les ondes LoRa. La charge utile radio fait exactement **32 octets** et contient l'en-tete de routage standard Nectar (`magic`, `id_mission`), suivi des donnees de telemetrie.
 
 ### Option A : CRC materiel (Recommande & Par defaut)
 
@@ -100,15 +100,16 @@ Le controle d'integrite est pris en charge directement par le silicium de la puc
 
 ```
 +------+------+------+------+------+------+------+------+------+------+------+------+
-| Byte |  0   |  1   |  2   | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30| 31  |
+| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |
 +------+------+------+------+------+------+------+------+------+------+------+------+
-| Champ|  id  | apid | type |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat.|
-| Taille| 1B  |  1B  |  1B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  | 1B  |
-+------+------+------+------+------+------+------+------+------+------+------+------+------+
-|                              wasp_payload_t (32 octets)                                   |
-+-------------------------------------------------------------------------------------------+
-|                         [CRC16 calcule en silicium par le SX1276]                         |
-+-------------------------------------------------------------------------------------------+
+| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. |
+|      |      | miss.|      |      |      |      |      |      |      |      |      |
+| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |
++------+------+------+------+------+------+------+------+------+------+------+------+
+|                              wasp_payload_t (32 octets)                           |
++-----------------------------------------------------------------------------------+
+|                     [CRC16 calcule en silicium par le SX1276]                     |
++-----------------------------------------------------------------------------------+
 ```
 
 ### Option B : CRC logiciel (Si le CRC materiel est desactive)
@@ -117,14 +118,15 @@ Si le CRC materiel est desactive (`AT+CRC=0`), l'emetteur calcule un CRC16 logic
 * **Taille totale** : `34` octets (32 + 2 octets de CRC logiciel).
 
 ```
-+-------------------------------------------------------------------------------------------+-----------+
-|                              wasp_payload_t (32 octets)                                   |  CRC16    |
-+------+------+------+------+------+------+------+------+------+------+------+------+-------+-----------+
-| Byte |  0   |  1   |  2   | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31   | 32..33    |
-+------+------+------+------+------+------+------+------+------+------+------+------+-------+-----------+
-| Champ|  id  | apid | type |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp | stat. | CRC16 SW  |
-| Taille| 1B  |  1B  |  1B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |    2B     |
-+------+------+------+------+------+------+------+------+------+------+------+------+-------+-----------+
++-----------------------------------------------------------------------------------+-----------+
+|                              wasp_payload_t (32 octets)                           |  CRC16    |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
+| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |  32..33   |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
+| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. | CRC16 SW  |
+|      |      | miss.|      |      |      |      |      |      |      |      |      |           |
+| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |    2B     |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
 ```
 
 > [!NOTE]

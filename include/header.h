@@ -18,7 +18,7 @@
 #include <ESP32Time.h>
 #include <Wire.h>
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.1.0"
 
 // ============================================================================
 // 1. GESTION DE L'ÉNERGIE (PMU - AXP192 / AXP2101)

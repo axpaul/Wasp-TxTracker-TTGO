@@ -211,7 +211,7 @@ Les commandes AT peuvent être envoyées via USB Série (`115200` bauds) ou via 
 | --- | --- | --- |
 | `AT` | Test de communication | `OK` |
 | `AT+HELP` ou `AT?` | Affiche l'aide et les commandes | *(Liste des commandes)* |
-| `AT+VER` ou `AT+INFO` | Affiche la version du firmware | `+INFO: WASP-TX TRACKER,FW=1.0.0` |
+| `AT+VER` ou `AT+INFO` | Affiche la version du firmware | `+INFO: WASP-TX TRACKER,FW=1.1.0` |
 | `AT+CFG` ou `AT+STATUS` | Affiche la configuration détaillée | *(Tableau de configuration)* |
 | `AT+ID=<0-255>` | Règle l'identifiant du tracker (SSID Num) | `OK` |
 | `AT+ID?` | Récupère l'identifiant du tracker | `+ID: 1` |
