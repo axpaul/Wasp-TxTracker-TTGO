@@ -57,11 +57,7 @@ struct wasp_payload_t {
 
 ### Magic byte (Octet 0)
 
-Octet de synchronisation fixe a `0xEB`.
-
-Le choix de `0xEB` repose sur deux criteres :
-- **Convention aerospatiale** — c'est le prefixe du mot de synchronisation IRIG-106 (`0xEB90`).
-- **Proprietes binaires** — le motif `1110 1011` presente une densite de transitions elevee, le rendant statistiquement peu probable dans un flux de donnees aleatoire et facile a detecter par un parseur.
+Octet de synchronisation fixe a `0xEB`. Il permet au parseur de NectarMC de detecter le debut d'une trame et de se resynchroniser rapidement en cas de coupure ou de perte de liaison serie.
 
 ### Id_mission (Octets 1–2)
 
