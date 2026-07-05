@@ -122,6 +122,56 @@ void test_wasp_mode_interval_logic(void) {
     TEST_ASSERT_EQUAL_UINT16(30, ecoInterval);
 }
 
+/**
+ * @brief Test de l'encodage du champ Id_mission NectarMC (SSID + APID)
+ */
+void test_nectarmc_id_mission_encoding(void) {
+    uint8_t ssid_type = 2; // BALLOON
+    uint8_t ssid_num = 1;  // Tracker ID = 1
+    uint8_t apid = 1;      // APID = 1
+
+    uint16_t ssid = ((ssid_type & 0x03) << 8) | ssid_num;
+    uint16_t id_mission = (ssid << 6) | (apid & 0x3F);
+
+    // ssid = (2 << 8) | 1 = 513
+    // id_mission = (513 << 6) | 1 = 32833 = 0x8041
+    TEST_ASSERT_EQUAL_UINT16(0x8041, id_mission);
+}
+
+/**
+ * @brief Test du format de trame série NectarMC côté bord
+ */
+void test_nectarmc_serial_frame_validation(void) {
+    uint16_t id_mission = 0x8041;
+    uint8_t payload[29] = {0};
+    payload[0] = 0xAA; // Fausse donnée pour test
+    
+    // Simuler la construction de la trame série côté bord (5 Header + 29 Payload + 2 CRC = 36 octets)
+    uint8_t frame[36];
+    frame[0] = 0xEB; // MAGIC
+    frame[1] = id_mission & 0xFF;
+    frame[2] = (id_mission >> 8) & 0xFF;
+    frame[3] = 0x00; // gs_flag
+    frame[4] = 29;   // payload_size
+    memcpy(frame + 5, payload, 29);
+    
+    uint16_t crc = calculate_crc16(frame, 34);
+    frame[34] = crc & 0xFF;
+    frame[35] = (crc >> 8) & 0xFF;
+    
+    // Validation des champs clés de la trame
+    TEST_ASSERT_EQUAL_UINT8(0xEB, frame[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x41, frame[1]);
+    TEST_ASSERT_EQUAL_UINT8(0x80, frame[2]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, frame[3]);
+    TEST_ASSERT_EQUAL_UINT8(29, frame[4]);
+    TEST_ASSERT_EQUAL_UINT8(0xAA, frame[5]); // Premier octet de la payload
+    
+    // Recalculer le CRC pour tester la validité du footer
+    uint16_t decoded_crc = frame[34] | (frame[35] << 8);
+    TEST_ASSERT_EQUAL_UINT16(crc, decoded_crc);
+}
+
 void setup() {
     // Attendre que la liaison USB série soit prête
     delay(2000);
@@ -133,6 +183,8 @@ void setup() {
     RUN_TEST(test_default_config_constants);
     RUN_TEST(test_wasp_mode_status_encoding);
     RUN_TEST(test_wasp_mode_interval_logic);
+    RUN_TEST(test_nectarmc_id_mission_encoding);
+    RUN_TEST(test_nectarmc_serial_frame_validation);
     
     UNITY_END();
 }
