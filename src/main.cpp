@@ -10,6 +10,7 @@
  */
 
 #include "header.h"
+#include "at_commands.h"
 
 // --- Définitions des Objets Globaux ---
 ESP32Time rtc;

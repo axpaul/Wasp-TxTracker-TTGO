@@ -159,8 +159,6 @@ void initRadio();
 void loraTask(void *pvParameters);
 void gpsTask(void *pvParameters);
 void send_telemetry();
-void checkSerialCommands();
-void handleConfigCommand(const char* cmd, Stream& responseStream);
 void updateTimerInterval(uint16_t seconds);
 
 // Gestion de l'énergie (PMU)

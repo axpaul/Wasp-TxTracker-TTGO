@@ -6,6 +6,7 @@
  */
 
 #include "header.h"
+#include "at_commands.h"
 
 // Déclaration de la fonction de mise à jour du timer (définie dans main.cpp)
 extern void updateTimerInterval(uint16_t seconds);

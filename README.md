@@ -203,38 +203,14 @@ Si vous souhaitez modifier le code ou compiler vous-même le projet, vous devez 
 
 ---
 
-## Commandes AT Disponibles
+## Configuration Dynamique via les Commandes AT
 
-Les commandes AT peuvent être envoyées via USB Série (`115200` bauds) ou via le Bluetooth (nom Bluetooth par défaut : `Wasp-TX-<ID>`). Elles se terminent par un retour à la ligne `\r\n`.
+Wasp-TX propose une interface interactive de commandes AT permettant de configurer la radio LoRa (fréquence, puissance, SF, bande passante), les identifiants NectarMC (ID, APID, Type) ou d'activer la sortie binaire USB en temps réel.
 
-| Commande | Action | Exemple de réponse / Comportement |
-| --- | --- | --- |
-| `AT` | Test de communication | `OK` |
-| `AT+HELP` ou `AT?` | Affiche l'aide et les commandes | *(Liste des commandes)* |
-| `AT+VER` ou `AT+INFO` | Affiche la version du firmware | `+INFO: WASP-TX TRACKER,FW=1.1.0` |
-| `AT+CFG` ou `AT+STATUS` | Affiche la configuration détaillée | *(Tableau de configuration)* |
-| `AT+ID=<0-255>` | Règle l'identifiant du tracker (SSID Num) | `OK` |
-| `AT+ID?` | Récupère l'identifiant du tracker | `+ID: 1` |
-| `AT+TYPE=<0-3>` | Règle le type (0=FX, 1=MF, 2=BALLOON, 3=OTHER) | `OK` |
-| `AT+TYPE?` | Récupère le type de tracker | `+TYPE: 2` |
-| `AT+INTERVAL=<sec>` | Règle l'intervalle d'envoi en secondes (1-3600) | `OK` *(Sauvegarde automatique)* |
-| `AT+INTERVAL?` | Récupère l'intervalle d'envoi | `+INTERVAL: 1` |
-| `AT+FREQ=<mhz>` | Règle la fréquence active (ex: `868.500`) | `OK` |
-| `AT+FREQ?` | Récupère la fréquence active | `+FREQ: 868.000` |
-| `AT+SF=<6-12>` | Règle le Spreading Factor LoRa | `OK` |
-| `AT+SF?` | Récupère le Spreading Factor LoRa | `+SF: 9` |
-| `AT+BW=<khz>` | Règle la bande passante LoRa | `OK` |
-| `AT+BW?` | Récupère la bande passante LoRa | `+BW: 125.0` |
-| `AT+POWER=<dbm>` | Règle la puissance d'émission LoRa (2-20) | `OK` |
-| `AT+POWER?` | Récupère la puissance d'émission LoRa | `+POWER: 14` |
-| `AT+CRC=<0\|1>` | Active (1) ou désactive (0) le CRC LoRa | `OK` |
-| `AT+CRC?` | Récupère le statut du CRC | `+CRC: 1,0` (CRC On, Mode CCITT) |
-| `AT+DEBUG=<0\|1>` | Active (1) ou désactive (0) les logs texte `[TX]` / `[HEX]` | `OK` *(Sauvegarde automatique)* |
-| `AT+DEBUG?` | Récupère le statut des logs texte | `+DEBUG: 0` |
-| `AT+BINUSB=<0\|1>` | Active (1) ou désactive (0) la trame binaire brute USB | `OK` *(Sauvegarde automatique)* |
-| `AT+BINUSB?` | Récupère le statut de la trame brute USB | `+BINUSB: 0` |
-| `AT+SAVE` | Sauvegarde manuellement les réglages en NVS | `OK` |
-| `AT+RESET` | Réinitialise les réglages d'usine et redémarre | `OK` |
+Les commandes peuvent être saisies sur la liaison USB-Série ou via Bluetooth SPP (nom : `Wasp-TX-<ID>`) avec une vitesse de `115200` bauds.
+
+Pour obtenir la liste complète des commandes, leurs syntaxes et des exemples d'exécution :
+👉 **[Consulter le Guide des Commandes AT](./AT_GUIDE.md)**
 
 ---
 
