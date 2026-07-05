@@ -92,6 +92,15 @@ uint8_t  ssid_num   = ssid & 0xFF;                       // Bits 7-0 du SSID
 uint8_t  ssid_type  = (ssid >> 8) & 0x03;                // Bits 9-8 du SSID
 ```
 
+Conformement au protocole NectarMC, le type de mission (SSID Type) correspond aux 2 bits de poids fort du SSID (bits 15–14 de `id_mission`) :
+
+| Valeur | Label | Description | Commande AT |
+| :---: | :--- | :--- | :--- |
+| `0` | **FX** | Fusee experimentale | `AT+TYPE=0` |
+| `1` | **MF** | Mini-fusee | `AT+TYPE=1` |
+| `2` | **BALLOON** | Ballon-sonde *(defaut)* | `AT+TYPE=2` |
+| `3` | **OTHER** | Autre | `AT+TYPE=3` |
+
 **Exemples concrets** (conformes aux exemples NectarMC) :
 
 | Identifiant | Type (bits) | NUM (dec.) | SSID (hex) | SSID (bin) |
@@ -114,17 +123,6 @@ Longueur en octets de la charge utile serie. Pour Wasp-TX, cette valeur est fixe
 ---
 
 ## 3. De/Encodage du bitmask status
-
-Conformement au protocole NectarMC, le type de mission correspond aux 2 bits de poids fort du SSID (bits 15–14 de `id_mission`) :
-
-| Valeur | Label | Description | Commande AT |
-| :---: | :--- | :--- | :--- |
-| `0` | **FX** | Fusee experimentale | `AT+TYPE=0` |
-| `1` | **MF** | Mini-fusee | `AT+TYPE=1` |
-| `2` | **BALLOON** | Ballon-sonde *(defaut)* | `AT+TYPE=2` |
-| `3` | **OTHER** | Autre | `AT+TYPE=3` |
-
-### Decodage du bitmask `status` (Octet 31)
 
 ```
   Bit :    7        6        5        4        3        2        1        0
