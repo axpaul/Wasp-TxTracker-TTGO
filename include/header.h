@@ -100,9 +100,8 @@ struct LoRaConfig {
 
 #pragma pack(push, 1) // Force l'alignement sur 1 octet pour la transmission radio
 struct wasp_payload_t {
-    uint8_t id;         // SSID Num (Tracker ID)
-    uint8_t apid;       // APID (Application Process Identifier)
-    uint8_t type;       // SSID Type (Tracker Type)
+    uint8_t magic;      // Magic Byte (0xEB)
+    uint16_t id_mission;// SSID & APID compactés en Little-Endian (type sur 2 bits, id sur 8 bits, apid sur 6 bits)
     uint32_t utc;       // Unix Epoch time
     uint8_t lat[4];     // Latitude (float)
     uint8_t lon[4];     // Longitude (float)
@@ -111,7 +110,7 @@ struct wasp_payload_t {
     uint8_t cog[4];     // Course (float)
     uint16_t vbat;      // Tension batterie (mV)
     int16_t temp;       // Température (en 1/100°C)
-    uint8_t status;     // Bit 7: GPS Fix, Bits 0-4: Sats count
+    uint8_t status;     // Bit 7: GPS Fix, Bit 5: Mode Eco, Bits 0-4: Sats count
 };                      // TOTAL = 32 octets
 #pragma pack(pop)
 
@@ -176,7 +175,7 @@ void configureMode(uint8_t mode);
 
 // Fonctions utilitaires
 uint16_t calculate_crc16(const uint8_t *data, size_t len);
-void sendNectarFrame(uint8_t ssid_type, uint8_t ssid_num, uint8_t apid, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr);
+void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr);
 void outputTelemetryFrame(const wasp_payload_t& packet);
 
 #endif // WASP_BOARD_H

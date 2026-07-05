@@ -50,17 +50,13 @@ uint16_t calculate_crc16(const uint8_t *data, size_t len) {
  * - Le CRC16-CCITT.
  * Émet le tout sur USB (Serial) et Bluetooth (SerialBT) si configuré et connecté.
  */
-void sendNectarFrame(uint8_t ssid_type, uint8_t ssid_num, uint8_t apid, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr) {
+void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len, int8_t rssi, int8_t snr) {
     // 1. Limiter la longueur brute de LoRa à 250 octets max pour laisser de la place aux métriques et au timestamp
     if (len > 250) {
         len = 250;
     }
 
-    // 2. Calculer le SSID (10 bits) et l'Id_mission (16 bits)
-    uint16_t ssid = ((ssid_type & 0x03) << 8) | ssid_num;
-    uint16_t id_mission = (ssid << 6) | (apid & 0x3F);
-
-    // 3. Préparer le Header NectarMC (4 octets)
+    // 2. Préparer le Header NectarMC (4 octets)
     uint8_t header[4];
     header[0] = NECTAR_MAGIC;
     header[1] = id_mission & 0xFF;              // Encodage en Little-Endian (partie basse)
@@ -111,7 +107,7 @@ void sendNectarFrame(uint8_t ssid_type, uint8_t ssid_num, uint8_t apid, const ui
 void outputTelemetryFrame(const wasp_payload_t& packet) {
     // Émettre la trame formatée Nectar (USB et/ou Bluetooth)
     // On passe le reste des données à partir de l'octet 3 (utc) pour éviter la duplication des en-têtes
-    sendNectarFrame(packet.type, packet.id, packet.apid, (const uint8_t*)&packet + 3, sizeof(wasp_payload_t) - 3, 0, 0);
+    sendNectarFrame(packet.id_mission, (const uint8_t*)&packet + 3, sizeof(wasp_payload_t) - 3, 0, 0);
 }
 
 /**
@@ -120,10 +116,10 @@ void outputTelemetryFrame(const wasp_payload_t& packet) {
 void send_telemetry() {
     wasp_payload_t packet;
     
-    // Remplissage de l'en-tete de routage
-    packet.id = activeConfig.trackerId; 
-    packet.apid = activeConfig.apid; 
-    packet.type = activeConfig.trackerType;
+    // Remplissage de l'en-tete de routage standard Nectar
+    packet.magic = NECTAR_MAGIC;
+    uint16_t ssid = ((activeConfig.trackerType & 0x03) << 8) | activeConfig.trackerId;
+    packet.id_mission = (ssid << 6) | (activeConfig.apid & 0x3F);
     packet.utc = (uint32_t)rtc.getEpoch();
     
     // Remplissage des coordonnees GPS (conversion float en tableau d'octets)
