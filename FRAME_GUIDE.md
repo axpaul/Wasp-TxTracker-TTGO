@@ -19,19 +19,18 @@ La structure `wasp_payload_t` est optimisee pour faire **exactement 32 octets** 
 ```c
 #pragma pack(push, 1)
 struct wasp_payload_t {
-    uint8_t  id;       // SSID Num (Tracker ID)
-    uint8_t  apid;     // Application Process Identifier
-    uint8_t  type;     // SSID Type (Tracker Type)
-    uint32_t utc;      // Unix Epoch time
-    uint8_t  lat[4];   // Latitude  (float IEEE 754)
-    uint8_t  lon[4];   // Longitude (float IEEE 754)
-    uint8_t  alt[4];   // Altitude  (float IEEE 754)
-    uint8_t  spd[4];   // Vitesse   (float IEEE 754)
-    uint8_t  cog[4];   // Cap       (float IEEE 754)
-    uint16_t vbat;     // Tension batterie (mV)
-    int16_t  temp;     // Temperature (1/100 C)
-    uint8_t  status;   // Bitmask d'etat
-};                     // TOTAL = 32 octets
+    uint8_t  magic;      // Magic Byte (0xEB)
+    uint16_t id_mission; // SSID & APID compactes en Little-Endian (type sur 2 bits, id sur 8 bits, apid sur 6 bits)
+    uint32_t utc;        // Unix Epoch time
+    uint8_t  lat[4];     // Latitude  (float IEEE 754)
+    uint8_t  lon[4];     // Longitude (float IEEE 754)
+    uint8_t  alt[4];     // Altitude  (float IEEE 754)
+    uint8_t  spd[4];     // Vitesse   (float IEEE 754)
+    uint8_t  cog[4];     // Cap       (float IEEE 754)
+    uint16_t vbat;       // Tension batterie (mV)
+    int16_t  temp;       // Temperature (1/100 C)
+    uint8_t  status;     // Bitmask d'etat
+};                       // TOTAL = 32 octets
 #pragma pack(pop)
 ```
 
@@ -39,9 +38,8 @@ struct wasp_payload_t {
 
 | Offset | Taille | Type | Nom | Description |
 | :---: | :---: | :---: | :--- | :--- |
-| 0 | 1 | `uint8_t` | `id` | SSID Num — Identifiant unique du tracker (0–255). |
-| 1 | 1 | `uint8_t` | `apid` | Application Process Identifier (0–63). |
-| 2 | 1 | `uint8_t` | `type` | SSID Type — Type de mission (voir table ci-dessous). |
+| 0 | 1 | `uint8_t` | `magic` | Magic Byte — Toujours `0xEB` pour la synchronisation. |
+| 1 | 2 | `uint16_t` | `id_mission` | Identifiant de mission (SSID + APID compactes en Little-Endian). |
 | 3 | 4 | `uint32_t` | `utc` | Horodatage GPS UTC (Unix Epoch, secondes depuis le 1er janv. 1970). |
 | 7 | 4 | `float` | `lat` | Latitude en degres decimaux (IEEE 754). |
 | 11 | 4 | `float` | `lon` | Longitude en degres decimaux (IEEE 754). |
@@ -53,9 +51,9 @@ struct wasp_payload_t {
 | 31 | 1 | `uint8_t` | `status` | Bitmask d'etat combine (voir detail ci-dessous). |
 | | **32** | | | **Total** |
 
-### Encodage du SSID Type (`type`)
+### Encodage du SSID Type
 
-Conformement au protocole NectarMC, le champ `type` correspond aux 2 bits de poids fort du SSID :
+Conformement au protocole NectarMC, le type de mission correspond aux 2 bits de poids fort du SSID (bits 15–14 de `id_mission`) :
 
 | Valeur | Label | Description | Commande AT |
 | :---: | :--- | :--- | :--- |
