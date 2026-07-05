@@ -254,9 +254,43 @@ pio test -e tbeam_v1_2
 
 ---
 
-## 📡 Documentation des Trames et Commandes (Protocole NectarMC)
+## Format des Trames (Radio & Série NectarMC)
 
-Pour en savoir plus sur les spécifications de communication, le contrôle d'intégrité et la syntaxe des commandes :
-* 👉 **[Guide Complet des Commandes AT](./AT_GUIDE.md)** : Liste complète, formats et paramètres des commandes de configuration de la carte.
-* 👉 **[Guide de Contrôle d'Intégrité (CRC)](./CRC_GUIDE.md)** : Description des deux niveaux de CRC (Radio LoRa et Liaison Série USB/Bluetooth).
-* 👉 **[Guide des Formats de Trames](./FRAME_GUIDE.md)** : Structure des paquets LoRa (Air), des trames série NectarMC, et de la charge utile WASP optimisée de 32 octets.
+Les données transitent sous le format standard **NectarMC** selon le canal de communication :
+
+*   **📡 Trames Radio LoRa (Bord → Station sol)** :
+    Le tracker émet la structure `wasp_payload_t` de **32 octets** directement sur les ondes LoRa. Cette structure compacte contient son propre en-tête de routage (`id`, `apid`, `type`), l'horodatage UTC, les coordonnées GPS (latitude, longitude, altitude, vitesse, cap), la tension batterie, la température et un bitmask d'état (fix GPS, nombre de satellites, mode de fonctionnement).
+
+*   **💻 Trames Série NectarMC (Tracker → PC ou Station sol → PC)** :
+    Trames binaires encapsulées avec Magic byte `0xEB`, `Id_mission` encodé sur 16 bits en Little-Endian (compactant SSID et APID), horodatage Epoch et CRC16-CCITT. La trame série Wasp-TX directe fait **42 octets** (4 octets de header + 29 octets de payload + 9 octets de métadonnées/CRC/LF).
+
+> [!NOTE]
+> La trame série émise directement par Wasp-TX **n'inclut pas** le champ `gs_flag` du protocole NectarMC complet. Lorsque la station sol [Nectar-RX](https://github.com/axpaul/Nectar-RxStation-LoRa32) relaie un paquet vers [NectarMC](https://github.com/mlavardin/NectarMC), elle le réencapsule dans le format complet à 5 octets de header avec le `gs_flag` approprié.
+
+Pour consulter les schémas binaires complets, les descriptions détaillées de chaque octet, les tables d'encodage SSID/APID et les exemples :
+👉 **[Consulter le Guide des Formats de Trames](./FRAME_GUIDE.md)**
+
+---
+
+## Contrôle d'Intégrité (CRC) et de Liaison
+
+Pour garantir la fiabilité de la transmission des données de la fusée jusqu'à votre écran, deux niveaux de contrôle d'intégrité (CRC) sont appliqués :
+1. **Liaison Radio LoRa (Tracker ➔ Station Sol)** : CRC matériel géré en silicium par le SX1276 (Option A, par défaut), ou CRC logiciel inséré dans la payload LoRa et validé en C++ par la station sol (Option B).
+2. **Liaison Série & Bluetooth (Station Sol ➔ PC)** : CRC logiciel calculé par l'ESP32 et vérifié à la réception par le PC (NectarMC).
+
+Pour une explication détaillée de ces deux niveaux de sécurité :
+👉 **[Consulter le Guide de Contrôle d'Intégrité (CRC)](./CRC_GUIDE.md)**
+
+---
+
+## 📡 Documentation Complète de l'Écosystème NectarMC
+
+| Document | Description |
+| :--- | :--- |
+| 👉 **[Guide des Formats de Trames](./FRAME_GUIDE.md)** | Structure des paquets LoRa (Air), des trames série NectarMC, et de la payload WASP de 32 octets. |
+| 👉 **[Guide de Contrôle d'Intégrité (CRC)](./CRC_GUIDE.md)** | Description des deux niveaux de CRC (Radio LoRa et Liaison Série USB/Bluetooth). |
+| 👉 **[Guide Complet des Commandes AT](./AT_GUIDE.md)** | Liste complète, formats et paramètres des commandes de configuration de la carte. |
+| 📡 **[Station Sol Nectar-RX](https://github.com/axpaul/Nectar-RxStation-LoRa32)** | Firmware de la station de réception LoRa32 (formats de trames station sol, `gs_flag`, logs CSV). |
+| 💻 **[NectarMC — Logiciel Sol](https://github.com/mlavardin/NectarMC)** | Logiciel de traitement, visualisation et enregistrement de la télémétrie (BDS, Grafana, InfluxDB). |
+| 📖 **[Guide BDS NectarMC](https://github.com/mlavardin/NectarMC/blob/master/DOCUMENTATION/FRAME_FORMAT.md)** | Définition du format de description des trames (Binary Data Scheme) pour la décommutation dans NectarMC. |
+
