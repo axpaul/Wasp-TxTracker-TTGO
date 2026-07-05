@@ -51,147 +51,9 @@ struct wasp_payload_t {
 | 31 | 1 | `uint8_t` | `status` | Bitmask d'etat combine (voir detail ci-dessous). |
 | | **32** | | | **Total** |
 
-### Encodage du SSID Type
-
-Conformement au protocole NectarMC, le type de mission correspond aux 2 bits de poids fort du SSID (bits 15–14 de `id_mission`) :
-
-| Valeur | Label | Description | Commande AT |
-| :---: | :--- | :--- | :--- |
-| `0` | **FX** | Fusee experimentale | `AT+TYPE=0` |
-| `1` | **MF** | Mini-fusee | `AT+TYPE=1` |
-| `2` | **BALLOON** | Ballon-sonde *(defaut)* | `AT+TYPE=2` |
-| `3` | **OTHER** | Autre | `AT+TYPE=3` |
-
-### Decodage du bitmask `status` (Octet 31)
-
-```
-  Bit :    7        6        5        4        3        2        1        0
-        +--------+--------+--------+--------+--------+--------+--------+--------+
-        |GPS Fix |Reserve | Mode   |                Satellites (0-31)            |
-        | 1=OK   |        | Eco=1  |                                            |
-        +--------+--------+--------+--------+--------+--------+--------+--------+
-```
-
-| Bit(s) | Nom | Description |
-| :---: | :--- | :--- |
-| 7 | GPS Fix | `1` = Fix GPS valide, `0` = Pas de fix. |
-| 6 | Reserve | Non utilise (toujours `0`). |
-| 5 | Mode | `0` = Mode Vol (performance), `1` = Mode Eco (economie). |
-| 4–0 | Satellites | Nombre de satellites GNSS captes (0–31). |
-
-**Exemple** : `status = 0xA5` = binaire `1010 0101`
-*   Bit 7 = `1` → Fix GPS valide
-*   Bit 5 = `1` → Mode Eco actif
-*   Bits 4-0 = `00101` = 5 satellites
-
 ---
 
-## 2. Trame Radio LoRa (Tracker bord → Station sol)
-
-Le tracker Wasp-TX transmet la structure `wasp_payload_t` **integralement** sur les ondes LoRa. La charge utile radio fait exactement **32 octets** et contient l'en-tete de routage standard Nectar (`magic`, `id_mission`), suivi des donnees de telemetrie.
-
-### Option A : CRC materiel (Recommande & Par defaut)
-
-Le controle d'integrite est pris en charge directement par le silicium de la puce SX1276. Le paquet LoRa ne contient que la structure `wasp_payload_t` brute.
-* **Taille totale** : `32` octets (taille fixe).
-* **Commande AT** : `AT+CRC=1` (active par defaut).
-
-```
-+------+------+------+------+------+------+------+------+------+------+------+------+
-| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |
-+------+------+------+------+------+------+------+------+------+------+------+------+
-| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. |
-|      |      | miss.|      |      |      |      |      |      |      |      |      |
-| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |
-+------+------+------+------+------+------+------+------+------+------+------+------+
-|                              wasp_payload_t (32 octets)                           |
-+-----------------------------------------------------------------------------------+
-|                     [CRC16 calcule en silicium par le SX1276]                     |
-+-----------------------------------------------------------------------------------+
-```
-
-### Option B : CRC logiciel (Si le CRC materiel est desactive)
-
-Si le CRC materiel est desactive (`AT+CRC=0`), l'emetteur calcule un CRC16 logiciel et l'ajoute en queue de payload. La station sol Nectar-RX le verifie avant de valider le paquet.
-* **Taille totale** : `34` octets (32 + 2 octets de CRC logiciel).
-
-```
-+-----------------------------------------------------------------------------------+-----------+
-|                              wasp_payload_t (32 octets)                           |  CRC16    |
-+------+------+------+------+------+------+------+------+------+------+------+------+-----------+
-| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |  32..33   |
-+------+------+------+------+------+------+------+------+------+------+------+------+-----------+
-| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. | CRC16 SW  |
-|      |      | miss.|      |      |      |      |      |      |      |      |      |           |
-| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |    2B     |
-+------+------+------+------+------+------+------+------+------+------+------+------+-----------+
-```
-
-> [!NOTE]
-> **Compatibilite et Fallback** : La station sol Nectar-RX detecte automatiquement les trames historiques sans Magic byte `0xEB` (commencant directement par le `SSID_NUM` brut) et les convertit a la volee au format NectarMC standard.
-
----
-
-## 3. Trame Serie NectarMC (Tracker / Station → PC)
-
-Lorsque le tracker emet ses donnees vers le PC (via `AT+BINUSB=1` sur USB ou via Bluetooth SPP), les donnees sont encapsulees dans une trame binaire NectarMC.
-
-> [!IMPORTANT]
-> **Difference avec la station sol Nectar-RX** : La trame serie emise directement par Wasp-TX **n'inclut pas** le champ `gs_flag` (Ground Station Flag) du protocole NectarMC complet. Le header Wasp-TX fait **4 octets** (MAGIC + Id_mission + payload_size). Lorsque la station sol Nectar-RX relaie un paquet vers NectarMC, elle le reencapsule dans le format complet a **5 octets** de header (avec `gs_flag`).
-
-### Format de trame serie Wasp-TX (emission directe USB/BT)
-
-**Taille totale** : `4 + N + 2 + 4 + 2 + 1` = **13 + N** octets.
-Pour Wasp-TX, N = **29** octets, soit une trame de **42 octets** au total.
-
-```
-+-------+------------+---------+------ ... ------+------+------+------------+-----------+------+
-| Byte  |   0        |  1..2   |    3  |  4      ...   3+N    | 4+N  | 5+N  | 6+N..9+N  |10+N..11+N|12+N |
-+-------+------------+---------+-------+------ ... ------+------+------+------------+-----------+------+
-| Champ | MAGIC      |Id_missi.| pay_  |      PAYLOAD         | RSSI | SNR  | Timestamp  |  CRC16   |  LF  |
-|       |            |         | len   |      (N octets)      |      |      |            |          |      |
-+-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
-| Type  | uint8      |uint16 LE| uint8 |     uint8[]          | int8 | int8 | uint32 LE  |uint16 LE | char |
-| Valeur|   0xEB     |         |  29   |                      |   0  |   0  |            |          | 0x0A |
-+-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
-  HEADER (4 octets)                                              METADATA (6 octets)     CTRL (2B)  TERM
-```
-
-### De-duplication de l'en-tete radio
-
-Les champs `id`, `apid` et `type` de la `wasp_payload_t` ne sont **pas** retransmis dans la payload serie. Ils sont compactes dans le champ `Id_mission` du header NectarMC. La payload serie commence donc a l'offset 3 de `wasp_payload_t` (le champ `utc`).
-
-```c
-// Extrait de serial.cpp — outputTelemetryFrame()
-sendNectarFrame(packet.type, packet.id, packet.apid,
-                (const uint8_t*)&packet + 3,       // Payload = octets 3 a 31 de wasp_payload_t
-                sizeof(wasp_payload_t) - 3,         // N = 29 octets
-                0, 0);                              // RSSI=0, SNR=0 (emission locale)
-```
-
-### Description detaillee des champs serie
-
-| Position | Type | Nom | Description |
-| :--- | :--- | :--- | :--- |
-| Octet 0 | `uint8_t` | `MAGIC` | Toujours `0xEB`. Marqueur de synchronisation aerospatial (IRIG-106). |
-| Octets 1–2 | `uint16_t` | `Id_mission` | Identifiant de mission encode en **Little-Endian**. Regroupe SSID et APID (voir section 4). |
-| Octet 3 | `uint8_t` | `payload_size` | Longueur N de la charge utile en octets (29 pour Wasp-TX). |
-| Octets 4 a 3+N | `uint8_t[]` | `Payload` | Donnees utiles : octets 3 a 31 de `wasp_payload_t` (UTC → Status). |
-| Octet 4+N | `int8_t` | `RSSI` | Force du signal LoRa recu en dBm (`0` si emis localement par le tracker). |
-| Octet 5+N | `int8_t` | `SNR` | Rapport signal/bruit LoRa en dB (`0` si emis localement). |
-| Octets 6+N a 9+N | `uint32_t` | `Timestamp` | Horodatage Epoch Unix (4 octets, Little-Endian). Heure RTC du dispositif emetteur. |
-| Octets 10+N a 11+N | `uint16_t` | `CRC16` | CRC16-CCITT, Little-Endian. Calcule sur les octets `0` a `9+N` inclus. |
-| Octet 12+N | `char` | `LF` | Caractere de fin de ligne `\n` (`0x0A`). |
-
-### Format de trame serie Nectar-RX (station sol → PC)
-
-Lorsque la station sol Nectar-RX relaie un paquet valide vers NectarMC, elle utilise le format complet avec `gs_flag`. Le header fait alors **5 octets** au lieu de 4. Le `gs_flag` est un bitmask indiquant les champs de metadonnees presents dans le footer (RSSI, SNR, Timestamp).
-
-> Pour la documentation complete du format station sol, consultez le [FRAME_GUIDE de Nectar-RX](https://github.com/axpaul/Nectar-RxStation-LoRa32/blob/main/FRAME_GUIDE.md) et le [Guide BDS de NectarMC](https://github.com/mlavardin/NectarMC/blob/master/DOCUMENTATION/FRAME_FORMAT.md).
-
----
-
-## 4. Encodage du Header NectarMC
+## 2. Encodage du Header NectarMC
 
 ### Magic byte (Octet 0)
 
@@ -247,11 +109,151 @@ uint8_t  ssid_type  = (ssid >> 8) & 0x03;                // Bits 9-8 du SSID
 
 ### Payload Size (Octet 3)
 
-Longueur en octets de la charge utile serie. Pour Wasp-TX, cette valeur est fixee a **29** (32 octets de `wasp_payload_t` moins les 3 octets d'en-tete `id`/`apid`/`type` deja encodes dans `Id_mission`).
+Longueur en octets de la charge utile serie. Pour Wasp-TX, cette valeur est fixee a **29** (32 octets de `wasp_payload_t` moins les 3 octets d'en-tete de routage deja encodes dans `Id_mission`).
 
 ---
 
-## 5. References Croisees
+## 3. De/Encodage du bitmask status
+
+Conformement au protocole NectarMC, le type de mission correspond aux 2 bits de poids fort du SSID (bits 15–14 de `id_mission`) :
+
+| Valeur | Label | Description | Commande AT |
+| :---: | :--- | :--- | :--- |
+| `0` | **FX** | Fusee experimentale | `AT+TYPE=0` |
+| `1` | **MF** | Mini-fusee | `AT+TYPE=1` |
+| `2` | **BALLOON** | Ballon-sonde *(defaut)* | `AT+TYPE=2` |
+| `3` | **OTHER** | Autre | `AT+TYPE=3` |
+
+### Decodage du bitmask `status` (Octet 31)
+
+```
+  Bit :    7        6        5        4        3        2        1        0
+        +--------+--------+--------+--------+--------+--------+--------+--------+
+        |GPS Fix |Reserve | Mode   |                Satellites (0-31)            |
+        | 1=OK   |        | Eco=1  |                                            |
+        +--------+--------+--------+--------+--------+--------+--------+--------+
+```
+
+| Bit(s) | Nom | Description |
+| :---: | :--- | :--- |
+| 7 | GPS Fix | `1` = Fix GPS valide, `0` = Pas de fix. |
+| 6 | Reserve | Non utilise (toujours `0`). |
+| 5 | Mode | `0` = Mode Vol (performance), `1` = Mode Eco (economie). |
+| 4–0 | Satellites | Nombre de satellites GNSS captes (0–31). |
+
+**Exemple** : `status = 0xA5` = binaire `1010 0101`
+*   Bit 7 = `1` → Fix GPS valide
+*   Bit 5 = `1` → Mode Eco actif
+*   Bits 4-0 = `00101` = 5 satellites
+
+---
+
+## 4. Trame Radio LoRa (Tracker bord → Station sol)
+
+Le tracker Wasp-TX transmet la structure `wasp_payload_t` **integralement** sur les ondes LoRa. La charge utile radio fait exactement **32 octets** et contient l'en-tete de routage standard Nectar (`magic`, `id_mission`), suivi des donnees de telemetrie.
+
+### Option A : CRC materiel (Recommande & Par defaut)
+
+Le controle d'integrite est pris en charge directement par le silicium de la puce SX1276. Le paquet LoRa ne contient que la structure `wasp_payload_t` brute.
+* **Taille totale** : `32` octets (taille fixe).
+* **Commande AT** : `AT+CRC=1` (active par defaut).
+
+```
++------+------+------+------+------+------+------+------+------+------+------+------+
+| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |
++------+------+------+------+------+------+------+------+------+------+------+------+
+| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. |
+|      |      | miss.|      |      |      |      |      |      |      |      |      |
+| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |
++------+------+------+------+------+------+------+------+------+------+------+------+
+|                              wasp_payload_t (32 octets)                           |
++-----------------------------------------------------------------------------------+
+|                     [CRC16 calcule en silicium par le SX1276]                     |
++-----------------------------------------------------------------------------------+
+```
+
+### Option B : CRC logiciel (Si le CRC materiel est desactive)
+
+Si le CRC materiel est desactive (`AT+CRC=0`), l'emetteur calcule un CRC16 logiciel et l'ajoute en queue de payload. La station sol Nectar-RX le verifie avant de valider le paquet.
+* **Taille totale** : `34` octets (32 + 2 octets de CRC logiciel).
+
+```
++-----------------------------------------------------------------------------------+-----------+
+|                              wasp_payload_t (32 octets)                           |  CRC16    |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
+| Byte |  0   | 1..2 | 3..6 | 7..10|11..14|15..18|19..22|23..26|27..28|29..30|  31  |  32..33   |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
+| Champ| magic| id_  |  utc |  lat |  lon |  alt |  spd |  cog | vbat | temp |stat. | CRC16 SW  |
+|      |      | miss.|      |      |      |      |      |      |      |      |      |           |
+| Taille| 1B  |  2B  |  4B  |  4B  |  4B  |  4B  |  4B  |  4B  |  2B  |  2B  |  1B  |    2B     |
++------+------+------+------+------+------+------+------+------+------+------+------+-----------+
+```
+
+> [!NOTE]
+> **Compatibilite et Fallback** : La station sol Nectar-RX detecte automatiquement les trames historiques sans Magic byte `0xEB` (commencant directement par le `SSID_NUM` brut) et les convertit a la volee au format NectarMC standard.
+
+---
+
+## 5. Trame Serie NectarMC (Tracker / Station → PC)
+
+Lorsque le tracker emet ses donnees vers le PC (via `AT+BINUSB=1` sur USB ou via Bluetooth SPP), les donnees sont encapsulees dans une trame binaire NectarMC.
+
+> [!IMPORTANT]
+> **Difference avec la station sol Nectar-RX** : La trame serie emise directement par Wasp-TX **n'inclut pas** le champ `gs_flag` (Ground Station Flag) du protocole NectarMC complet. Le header Wasp-TX fait **4 octets** (MAGIC + Id_mission + payload_size). Lorsque la station sol Nectar-RX relaie un paquet vers NectarMC, elle le reencapsule dans le format complet a **5 octets** de header (avec `gs_flag`).
+
+### Format de trame serie Wasp-TX (emission directe USB/BT)
+
+**Taille totale** : `4 + N + 2 + 4 + 2 + 1` = **13 + N** octets.
+Pour Wasp-TX, N = **29** octets, soit une trame de **42 octets** au total.
+
+```
++-------+------------+---------+------ ... ------+------+------+------------+-----------+------+
+| Byte  |   0        |  1..2   |    3  |  4      ...   3+N    | 4+N  | 5+N  | 6+N..9+N  |10+N..11+N|12+N |
++-------+------------+---------+-------+------ ... ------+------+------+------------+-----------+------+
+| Champ | MAGIC      |Id_missi.| pay_  |      PAYLOAD         | RSSI | SNR  | Timestamp  |  CRC16   |  LF  |
+|       |            |         | len   |      (N octets)      |      |      |            |          |      |
++-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
+| Type  | uint8      |uint16 LE| uint8 |     uint8[]          | int8 | int8 | uint32 LE  |uint16 LE | char |
+| Valeur|   0xEB     |         |  29   |                      |   0  |   0  |            |          | 0x0A |
++-------+------------+---------+-------+----------------------+------+------+------------+----------+------+
+  HEADER (4 octets)                                              METADATA (6 octets)     CTRL (2B)  TERM
+```
+
+### De-duplication de l'en-tete radio
+
+Les champs `id`, `apid` et `type` de la `wasp_payload_t` ne sont **pas** retransmis dans la payload serie. Ils sont compactes dans le champ `Id_mission` du header NectarMC. La payload serie commence donc a l'offset 3 de `wasp_payload_t` (le champ `utc`).
+
+```c
+// Extrait de serial.cpp — outputTelemetryFrame()
+sendNectarFrame(packet.id_mission,
+                (const uint8_t*)&packet + 3,       // Payload = octets 3 a 31 de wasp_payload_t
+                sizeof(wasp_payload_t) - 3,         // N = 29 octets
+                0, 0);                              // RSSI=0, SNR=0 (emission locale)
+```
+
+### Description detaillee des champs serie
+
+| Position | Type | Nom | Description |
+| :--- | :--- | :--- | :--- |
+| Octet 0 | `uint8_t` | `MAGIC` | Toujours `0xEB`. Marqueur de synchronisation aerospatial (IRIG-106). |
+| Octets 1–2 | `uint16_t` | `Id_mission` | Identifiant de mission encode en **Little-Endian**. Regroupe SSID et APID (voir section 2). |
+| Octet 3 | `uint8_t` | `payload_size` | Longueur N de la charge utile en octets (29 pour Wasp-TX). |
+| Octets 4 a 3+N | `uint8_t[]` | `Payload` | Donnees utiles : octets 3 a 31 de `wasp_payload_t` (UTC → Status). |
+| Octet 4+N | `int8_t` | `RSSI` | Force du signal LoRa recu en dBm (`0` si emis localement par le tracker). |
+| Octet 5+N | `int8_t` | `SNR` | Rapport signal/bruit LoRa en dB (`0` si emis localement). |
+| Octets 6+N a 9+N | `uint32_t` | `Timestamp` | Horodatage Epoch Unix (4 octets, Little-Endian). Heure RTC du dispositif emetteur. |
+| Octets 10+N a 11+N | `uint16_t` | `CRC16` | CRC16-CCITT, Little-Endian. Calcule sur les octets `0` a `9+N` inclus. |
+| Octet 12+N | `char` | `LF` | Caractere de fin de ligne `\n` (`0x0A`). |
+
+### Format de trame serie Nectar-RX (station sol → PC)
+
+Lorsque la station sol Nectar-RX relaie un paquet valide vers NectarMC, elle utilise le format complet avec `gs_flag`. Le header fait alors **5 octets** au lieu de 4. Le `gs_flag` est un bitmask indiquant les champs de metadonnees presents dans le footer (RSSI, SNR, Timestamp).
+
+> Pour la documentation complete du format station sol, consultez le [FRAME_GUIDE de Nectar-RX](https://github.com/axpaul/Nectar-RxStation-LoRa32/blob/main/FRAME_GUIDE.md) et le [Guide BDS de NectarMC](https://github.com/mlavardin/NectarMC/blob/master/DOCUMENTATION/FRAME_FORMAT.md).
+
+---
+
+## 6. References Croisees
 
 | Document | Description |
 | :--- | :--- |

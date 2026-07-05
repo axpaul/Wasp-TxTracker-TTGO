@@ -12,7 +12,7 @@ graph LR
 
 ---
 
-## 🔍 Niveau 1 : La Liaison Radio LoRa (Tracker ➔ Station Réceptrice)
+## Niveau 1 : La Liaison Radio LoRa (Tracker ➔ Station Réceptrice)
 
 Ce contrôle vérifie que le paquet radio capté dans les airs n'a pas été altéré par le bruit de fond électromagnétique ou la distance.
 
@@ -27,7 +27,7 @@ Si le CRC matériel est désactivé (`AT+CRC=0`), la station sol attend un CRC16
 
 ---
 
-## 💻 Niveau 2 : La Liaison Série & Bluetooth (Station / Tracker ➔ PC)
+## Niveau 2 : La Liaison Série & Bluetooth (Station / Tracker ➔ PC)
 
 Lorsque les données de télémétrie sont envoyées vers l'ordinateur de contrôle via USB ou Bluetooth (qu'il s'agisse de la station sol réceptrice ou de Wasp-TX configuré avec `AT+BINUSB=1`), elles sont encapsulées dans le format de trame **NectarMC**.
 

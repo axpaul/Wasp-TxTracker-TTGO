@@ -52,7 +52,7 @@ Le code s'adapte automatiquement selon l'environnement de compilation choisi :
 
 Wasp-TX intègre une gestion logique de l'alimentation, des boutons physiques et des indicateurs lumineux de la carte TTGO T-Beam :
 
-### 🔘 Fonctions des Boutons
+### Fonctions des Boutons
 
 *   **Bouton d'Alimentation (PEKEY)** :
     *   **Allumage** : Un appui simple de ~1 seconde démarre proprement la carte.
@@ -64,13 +64,13 @@ Wasp-TX intègre une gestion logique de l'alimentation, des boutons physiques et
     *   **Appui Long ($\ge 1.5$ seconde)** : Éteint le GPS et la radio et bascule immédiatement l'ESP32 en **veille Standby** (Deep Sleep, consommation < 15 µA).
     *   **Réveil (Wakeup)** : Si la carte est en veille Standby, un simple appui sur ce bouton (GPIO 38) réveille instantanément le tracker.
 
-### 💡 Rôle des LEDs (Rouge vs Bleue)
+### Rôle des LEDs (Rouge vs Bleue)
 
-*   **LED Rouge Utilisateur (GPIO 4)** : C'est la seule LED pilotée par le programme. Elle est active à l'état bas (`LOW`).
+*   **<span style="color:red">LED Rouge Utilisateur</span> (GPIO 4)** : C'est la seule LED pilotée par le programme. Elle est active à l'état bas (`LOW`).
     *   **Envoi Télémétrie** : Clignote **1 fois** court à chaque transmission en Mode Vol, et **2 fois** court en Mode Éco.
     *   **Changement de Mode** : Clignote **1 fois long** (400ms) pour confirmer le passage en Mode Vol, et **2 fois long** (350ms) pour le passage en Mode Éco.
     *   **Extinction/Veille** : Clignote rapidement 4 fois pour confirmer l'extinction logicielle, ou 1 fois long (400ms) pour confirmer la mise en veille Standby.
-*   **LED Bleue de Charge (CHG)** : Cette LED n'est **pas pilotable logiquement**. Elle est câblée physiquement sur le circuit d'alimentation et s'allume automatiquement en bleu uniquement lorsqu'un accu est en cours de chargement via le port USB. Elle reste éteinte si la batterie est chargée ou absente.
+*   **<span style="color:blue">LED Bleue de Charge (CHG)</span>** : Cette LED n'est **pas pilotable logiquement**. Elle est câblée physiquement sur le circuit d'alimentation et s'allume automatiquement en bleu uniquement lorsqu'un accu est en cours de chargement via le port USB. Elle reste éteinte si la batterie est chargée ou absente.
 
 ---
 
@@ -234,10 +234,10 @@ pio test -e tbeam_v1_2
 
 Les données transitent sous le format standard **NectarMC** selon le canal de communication :
 
-*   **📡 Trames Radio LoRa (Bord → Station sol)** :
+*   **Trames Radio LoRa (Bord → Station sol)** :
     Le tracker émet la structure `wasp_payload_t` de **32 octets** directement sur les ondes LoRa. Cette structure compacte contient son propre en-tête de routage (`id`, `apid`, `type`), l'horodatage UTC, les coordonnées GPS (latitude, longitude, altitude, vitesse, cap), la tension batterie, la température et un bitmask d'état (fix GPS, nombre de satellites, mode de fonctionnement).
 
-*   **💻 Trames Série NectarMC (Tracker → PC ou Station sol → PC)** :
+*   **Trames Série NectarMC (Tracker → PC ou Station sol → PC)** :
     Trames binaires encapsulées avec Magic byte `0xEB`, `Id_mission` encodé sur 16 bits en Little-Endian (compactant SSID et APID), horodatage Epoch et CRC16-CCITT. La trame série Wasp-TX directe fait **42 octets** (4 octets de header + 29 octets de payload + 9 octets de métadonnées/CRC/LF).
 
 > [!NOTE]
@@ -259,7 +259,7 @@ Pour une explication détaillée de ces deux niveaux de sécurité :
 
 ---
 
-## 📡 Documentation Complète de l'Écosystème NectarMC
+## Documentation Complète de l'Écosystème NectarMC
 
 | Document | Description |
 | :--- | :--- |
