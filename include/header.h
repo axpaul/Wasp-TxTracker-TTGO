@@ -18,7 +18,7 @@
 #include <ESP32Time.h>
 #include <Wire.h>
 
-#define FW_VERSION "1.1.0"
+#define FW_VERSION "1.2.0"
 
 // ============================================================================
 // 1. GESTION DE L'ÉNERGIE (PMU - AXP192 / AXP2101)
@@ -102,6 +102,7 @@ struct LoRaConfig {
 struct wasp_payload_t {
     uint8_t magic;      // Magic Byte (0xEB)
     uint16_t id_mission;// SSID & APID compactés en Little-Endian (type sur 2 bits, id sur 8 bits, apid sur 6 bits)
+    uint8_t payload_size; // Taille de la payload LoRa (29 octets pour WASP)
     uint32_t utc;       // Unix Epoch time
     float lat;          // Latitude (IEEE 754 float)
     float lon;          // Longitude (IEEE 754 float)
@@ -111,7 +112,7 @@ struct wasp_payload_t {
     uint16_t vbat;      // Tension batterie (mV)
     int16_t temp;       // Température (en 1/100°C)
     uint8_t status;     // Bit 7: GPS Fix, Bit 5: Mode Eco, Bits 0-4: Sats count
-};                      // TOTAL = 32 octets
+};                      // TOTAL = 33 octets
 #pragma pack(pop)
 
 // Structure pour l'échange de données GPS de manière thread-safe

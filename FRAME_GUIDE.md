@@ -12,25 +12,26 @@ Pour le controle d'integrite (CRC), consultez le guide dedie :
 
 ---
 
-## 1. Structure de la charge utile WASP (`wasp_payload_t` — 32 octets)
+## 1. Structure de la charge utile WASP (`wasp_payload_t` — 33 octets)
 
-La structure `wasp_payload_t` est optimisee pour faire **exactement 32 octets** afin de maximiser l'efficacite de la transmission LoRa. Elle est packee sans alignement (`#pragma pack(1)`) et transmise **telle quelle** comme paquet radio.
+La structure `wasp_payload_t` est optimisee pour faire **exactement 33 octets** (dont 4 octets d'en-tete standardise NectarMC) afin de maximiser l'efficacite de la transmission LoRa. Elle est packee sans alignement (`#pragma pack(1)`) et transmise **telle quelle** comme paquet radio.
 
 ```c
 #pragma pack(push, 1)
 struct wasp_payload_t {
     uint8_t  magic;      // Magic Byte (0xEB)
     uint16_t id_mission; // SSID & APID compactes en Little-Endian (type sur 2 bits, id sur 8 bits, apid sur 6 bits)
+    uint8_t  payload_size;// Longueur de la payload LoRa brute (29 octets)
     uint32_t utc;        // Unix Epoch time
-    uint8_t  lat[4];     // Latitude  (float IEEE 754)
-    uint8_t  lon[4];     // Longitude (float IEEE 754)
-    uint8_t  alt[4];     // Altitude  (float IEEE 754)
-    uint8_t  spd[4];     // Vitesse   (float IEEE 754)
-    uint8_t  cog[4];     // Cap       (float IEEE 754)
+    float    lat;        // Latitude  (float IEEE 754)
+    float    lon;        // Longitude (float IEEE 754)
+    float    alt;        // Altitude  (float IEEE 754)
+    float    spd;        // Vitesse   (float IEEE 754)
+    float    cog;        // Cap       (float IEEE 754)
     uint16_t vbat;       // Tension batterie (mV)
     int16_t  temp;       // Temperature (1/100 C)
     uint8_t  status;     // Bitmask d'etat
-};                       // TOTAL = 32 octets
+};                       // TOTAL = 33 octets
 #pragma pack(pop)
 ```
 
@@ -40,16 +41,17 @@ struct wasp_payload_t {
 | :---: | :---: | :---: | :--- | :--- |
 | 0 | 1 | `uint8_t` | `magic` | Magic Byte — Toujours `0xEB` pour la synchronisation. |
 | 1 | 2 | `uint16_t` | `id_mission` | Identifiant de mission (SSID + APID compactes en Little-Endian). |
-| 3 | 4 | `uint32_t` | `utc` | Horodatage GPS UTC (Unix Epoch, secondes depuis le 1er janv. 1970). |
-| 7 | 4 | `float` | `lat` | Latitude en degres decimaux (IEEE 754). |
-| 11 | 4 | `float` | `lon` | Longitude en degres decimaux (IEEE 754). |
-| 15 | 4 | `float` | `alt` | Altitude GPS en metres. |
-| 19 | 4 | `float` | `spd` | Vitesse sol GPS en km/h. |
-| 23 | 4 | `float` | `cog` | Cap (Course Over Ground) en degres (0–360). |
-| 27 | 2 | `uint16_t` | `vbat` | Tension de la batterie en millivolts (mV). |
-| 29 | 2 | `int16_t` | `temp` | Temperature PMU interne en centiemes de C (ex: `2350` = 23.50 C). |
-| 31 | 1 | `uint8_t` | `status` | Bitmask d'etat combine (voir detail ci-dessous). |
-| | **32** | | | **Total** |
+| 3 | 1 | `uint8_t` | `payload_size` | Longueur N de la charge utile LoRa brute (29 octets pour WASP). |
+| 4 | 4 | `uint32_t` | `utc` | Horodatage GPS UTC (Unix Epoch, secondes depuis le 1er janv. 1970). |
+| 8 | 4 | `float` | `lat` | Latitude en degres decimaux (IEEE 754). |
+| 12 | 4 | `float` | `lon` | Longitude en degres decimaux (IEEE 754). |
+| 16 | 4 | `float` | `alt` | Altitude GPS en metres. |
+| 20 | 4 | `float` | `spd` | Vitesse sol GPS en km/h. |
+| 24 | 4 | `float` | `cog` | Cap (Course Over Ground) en degres (0–360). |
+| 28 | 2 | `uint16_t` | `vbat` | Tension de la batterie en millivolts (mV). |
+| 30 | 2 | `int16_t` | `temp` | Temperature PMU interne en centiemes de C (ex: `2350` = 23.50 C). |
+| 32 | 1 | `uint8_t` | `status` | Bitmask d'etat combine (voir detail ci-dessous). |
+| | **33** | | | **Total** |
 
 ---
 

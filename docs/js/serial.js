@@ -275,10 +275,11 @@ class WaspSerial {
     while (offset < buf.length) {
       // 1. Détection de trame binaire NectarMC (MAGIC = 0xEB)
       if (buf[offset] === 0xEB) {
-        if (buf.length >= offset + 5) {
-          // Détection automatique du format (Nouveau standard avec gs_flag vs Ancien format)
-          // Si l'octet 3 (gs_flag dans le nouveau format, payloadSize dans l'ancien) est <= 4, c'est le gs_flag
-          let isNewFormat = buf[offset + 3] <= 4;
+        if (buf.length >= offset + 4) {
+          // On a au moins MAGIC (1B) + ID_MISSION (2B) + SIZE/GS_FLAG (1B)
+          let byte3 = buf[offset + 3];
+          
+          let isStationFrame = byte3 <= 4; // Si c'est gs_flag, il vaut 0, 1, 2, 3 ou 4.
           
           let payloadSize = 0;
           let gsFlag = 0;
@@ -286,9 +287,14 @@ class WaspSerial {
           let hasTimestamp = false;
           let hasRssi = false;
           let hasSnr = false;
+          let isLegacyBord = false;
           
-          if (isNewFormat) {
-            gsFlag = buf[offset + 3];
+          if (isStationFrame) {
+            // Format Station Sol (avec gs_flag à l'offset 3, payloadSize à l'offset 4)
+            if (buf.length < offset + 5) {
+              break; // Attendre l'octet de taille
+            }
+            gsFlag = byte3;
             payloadSize = buf[offset + 4];
             hasRssi = (gsFlag & 0x01) !== 0;
             hasSnr = (gsFlag & 0x02) !== 0;
@@ -296,26 +302,55 @@ class WaspSerial {
             
             frameLength = 5 + payloadSize + (hasRssi ? 1 : 0) + (hasSnr ? 1 : 0) + (hasTimestamp ? 4 : 0) + 2;
           } else {
-            // Ancien format (v1.3.1 ou v1.4.0)
-            payloadSize = buf[offset + 3];
-            let frameLength140 = payloadSize + 13; // avec timestamp et \n final
-            let frameLength131 = payloadSize + 9;  // sans timestamp avec \n final
+            // Format Bord direct (pas de gs_flag, payload_size est à l'offset 3)
+            payloadSize = byte3;
             
-            if (buf.length >= offset + frameLength140 && buf[offset + frameLength140 - 1] === 0x0A) {
-              frameLength = frameLength140;
-              hasTimestamp = true;
-            } else if (buf.length >= offset + frameLength131 && buf[offset + frameLength131 - 1] === 0x0A) {
-              frameLength = frameLength131;
-              hasTimestamp = false;
+            // Pour le format bord direct standard NectarMC :
+            // 4 (Header: MAGIC, ID_MISSION_L, ID_MISSION_H, SIZE) + Payload(N) + CRC16(2) = N + 6
+            let stdFrameLength = 4 + payloadSize + 2;
+            
+            // On peut aussi avoir de vieilles trames avec RSSI/SNR et \n (longueur N + 9)
+            let legacyFrameLength = 4 + payloadSize + 2 + 2 + 1; // N + 9
+            
+            // Tentative 1 : Nouveau Standard Bord (N + 6, pas de \n)
+            if (buf.length >= offset + stdFrameLength) {
+              let frameSub = buf.slice(offset, offset + stdFrameLength);
+              let dvSub = new DataView(frameSub.buffer, frameSub.byteOffset, frameSub.byteLength);
+              let recCrc = dvSub.getUint16(stdFrameLength - 2, true);
+              let calcCrc = this.calculateCRC16(frameSub, stdFrameLength - 2);
+              if (recCrc === calcCrc) {
+                frameLength = stdFrameLength;
+                hasRssi = false;
+                hasSnr = false;
+                hasTimestamp = false;
+              }
             }
             
-            hasRssi = true;
-            hasSnr = true;
+            // Tentative 2 : Ancien format avec RSSI/SNR et \n (N + 9)
+            if (frameLength === 0 && buf.length >= offset + legacyFrameLength) {
+              let frameSub = buf.slice(offset, offset + legacyFrameLength);
+              if (frameSub[legacyFrameLength - 1] === 0x0A) { // '\n' final
+                frameLength = legacyFrameLength;
+                hasRssi = true;
+                hasSnr = true;
+                hasTimestamp = false;
+                isLegacyBord = true;
+              }
+            }
+            
+            // Si aucune des deux tentatives ne matche mais qu'on a déjà assez d'octets pour la longueur max,
+            // alors c'est peut-être une trame corrompue, on passe au caractère suivant.
+            if (frameLength === 0) {
+              let maxExpected = Math.max(stdFrameLength, legacyFrameLength);
+              if (buf.length < offset + maxExpected) {
+                break; // Attendre plus d'octets avant de rejeter
+              }
+            }
           }
           
           if (frameLength > 0 && buf.length >= offset + frameLength) {
             let frame = buf.slice(offset, offset + frameLength);
-            this.parseNectarFrame(frame, isNewFormat, gsFlag, payloadSize, hasTimestamp, hasRssi, hasSnr);
+            this.parseNectarFrame(frame, isStationFrame, gsFlag, payloadSize, hasTimestamp, hasRssi, hasSnr, isLegacyBord);
             offset += frameLength;
             
             // Consommer le saut de ligne résiduel s'il y en a un juste après
@@ -323,11 +358,15 @@ class WaspSerial {
               offset++;
             }
             continue;
+          } else if (frameLength === 0) {
+            // Trame invalide commencée par 0xEB, on avance d'un octet pour chercher le prochain 0xEB
+            offset++;
+            continue;
           } else {
-            break; // Attente d'octets supplémentaires
+            break;
           }
         } else {
-          break; // Attente d'octets supplémentaires
+          break; // Attendre d'octets supplémentaires
         }
       }
       
@@ -348,7 +387,7 @@ class WaspSerial {
     return buf.slice(offset);
   }
 
-  parseNectarFrame(frame, isNewFormat, gsFlag, payloadSize, hasTimestamp, hasRssi, hasSnr) {
+  parseNectarFrame(frame, isStationFrame, gsFlag, payloadSize, hasTimestamp, hasRssi, hasSnr, isLegacyBord) {
     let dv = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);
     
     // Décodage ID mission (SSID + APID)
@@ -357,7 +396,7 @@ class WaspSerial {
     let ssid_num = (id_mission >> 6) & 0xFF;
     let apid = id_mission & 0x3F;
     
-    let offset = isNewFormat ? 5 : 4;
+    let offset = isStationFrame ? 5 : 4;
     let payloadBytes = frame.slice(offset, offset + payloadSize);
     offset += payloadSize;
     
@@ -397,19 +436,22 @@ class WaspSerial {
     let altVal = 'N/A';
     let batVal = 'N/A';
     
-    // Décryptage de la payload WASP (29 octets)
-    if (payloadSize === 29 && crcOK) {
+    // Décryptage de la payload WASP (32 octets standard ou historique 29 octets)
+    if ((payloadSize === 32 || payloadSize === 29) && crcOK) {
       let payloadDv = new DataView(payloadBytes.buffer, payloadBytes.byteOffset, payloadBytes.byteLength);
-      let utc = payloadDv.getUint32(0, true);
-      let lat = payloadDv.getFloat32(4, true);
-      let lon = payloadDv.getFloat32(8, true);
-      let alt = payloadDv.getFloat32(12, true);
-      let spd = payloadDv.getFloat32(16, true);
-      let cog = payloadDv.getFloat32(20, true);
-      let vbat = payloadDv.getUint16(24, true);
-      let temp = payloadDv.getInt16(26, true);
+      let isFullPayload = payloadSize === 32;
+      let offsetPayload = isFullPayload ? 3 : 0;
       
-      let statusByte = payloadDv.getUint8(28);
+      let utc = payloadDv.getUint32(offsetPayload + 0, true);
+      let lat = payloadDv.getFloat32(offsetPayload + 4, true);
+      let lon = payloadDv.getFloat32(offsetPayload + 8, true);
+      let alt = payloadDv.getFloat32(offsetPayload + 12, true);
+      let spd = payloadDv.getFloat32(offsetPayload + 16, true);
+      let cog = payloadDv.getFloat32(offsetPayload + 20, true);
+      let vbat = payloadDv.getUint16(offsetPayload + 24, true);
+      let temp = payloadDv.getInt16(offsetPayload + 26, true);
+      
+      let statusByte = payloadDv.getUint8(offsetPayload + 28);
       let sats = statusByte & 0x1F;
       let gpsFix = (statusByte >> 7) & 0x01;
       let mode = (statusByte >> 5) & 0x01;

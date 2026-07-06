@@ -97,8 +97,8 @@ void sendNectarFrame(uint16_t id_mission, const uint8_t *payload, size_t len) {
  */
 void outputTelemetryFrame(const wasp_payload_t& packet) {
     // Émettre la trame formatée Nectar (USB et/ou Bluetooth)
-    // On passe le reste des données à partir de l'octet 3 (utc) pour éviter la duplication des en-têtes
-    sendNectarFrame(packet.id_mission, (const uint8_t*)&packet + 3, sizeof(wasp_payload_t) - 3);
+    // La payload série fait 29 octets et commence à packet.utc (offset 4)
+    sendNectarFrame(packet.id_mission, (const uint8_t*)&packet + 4, sizeof(wasp_payload_t) - 4);
 }
 
 /**
@@ -111,6 +111,7 @@ void send_telemetry() {
     packet.magic = NECTAR_MAGIC;
     uint16_t ssid = ((activeConfig.trackerType & 0x03) << 8) | activeConfig.trackerId;
     packet.id_mission = (ssid << 6) | (activeConfig.apid & 0x3F);
+    packet.payload_size = sizeof(wasp_payload_t) - 4; // 29 octets pour WASP
     packet.utc = (uint32_t)rtc.getEpoch();
     
     double lat = 0.0;
