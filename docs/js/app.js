@@ -1,40 +1,51 @@
-// Initialisation de la carte (Leaflet)
-let map, marker, polyline;
-let trackPoints = [];
+/**
+ * @class WaspMap
+ * @brief Composant de gestion de la carte Leaflet et du tracé de trajectoire.
+ */
+class WaspMap {
+  constructor(mapId) {
+    this.mapId = mapId;
+    this.map = null;
+    this.marker = null;
+    this.polyline = null;
+    this.trackPoints = [];
+    
+    this.initMap();
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialisation Map centrée sur la France par défaut
-  map = L.map('map').setView([46.603354, 1.888334], 5);
-  
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20
-  }).addTo(map);
+  initMap() {
+    // Initialisation Map centrée sur la France par défaut
+    this.map = L.map(this.mapId).setView([46.603354, 1.888334], 5);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(this.map);
 
-  marker = L.marker([46.603354, 1.888334]).addTo(map);
-  
-  // Polyline pour dessiner la trajectoire du tracker (limité à 50 points)
-  polyline = L.polyline([], {
-    color: '#00e5ff', // Cyan fluorescent assorti au thème
-    weight: 3,
-    opacity: 0.8,
-    lineJoin: 'round'
-  }).addTo(map);
-  
-  // Exposer updateMap globalement pour serial.js
-  window.updateMap = (lat, lon, details) => {
+    this.marker = L.marker([46.603354, 1.888334]).addTo(this.map);
+    
+    // Polyline pour dessiner la trajectoire du tracker (limité à 50 points)
+    this.polyline = L.polyline([], {
+      color: '#00e5ff', // Cyan fluorescent assorti au thème
+      weight: 3,
+      opacity: 0.8,
+      lineJoin: 'round'
+    }).addTo(this.map);
+  }
+
+  updatePosition(lat, lon, details) {
     const latNum = parseFloat(lat);
     const lonNum = parseFloat(lon);
-    if(!isNaN(latNum) && !isNaN(lonNum) && latNum !== 0 && lonNum !== 0) {
+    if (!isNaN(latNum) && !isNaN(lonNum) && latNum !== 0 && lonNum !== 0) {
       const newLatLng = new L.LatLng(latNum, lonNum);
       
       // Déplacement du marqueur
-      marker.setLatLng(newLatLng);
+      this.marker.setLatLng(newLatLng);
       
       // Déclenchement de la pulsation glow sur l'icône du marqueur Leaflet
-      if (marker && marker._icon) {
-        const iconEl = marker._icon;
+      if (this.marker && this.marker._icon) {
+        const iconEl = this.marker._icon;
         iconEl.classList.remove('wasp-pulse');
         // Force reflow pour réinitialiser l'animation CSS
         void iconEl.offsetWidth;
@@ -42,22 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Ajout du point à la trajectoire
-      trackPoints.push(newLatLng);
-      const isFirstPoint = trackPoints.length === 1;
+      this.trackPoints.push(newLatLng);
+      const isFirstPoint = this.trackPoints.length === 1;
       
-      if (trackPoints.length > 50) {
-        trackPoints.shift(); // Anti-overflow : Conserver uniquement les 50 derniers points
+      if (this.trackPoints.length > 50) {
+        this.trackPoints.shift(); // Conserver uniquement les 50 derniers points
       }
       
       // Mise à jour du tracé de la ligne sur la carte
-      polyline.setLatLngs(trackPoints);
+      this.polyline.setLatLngs(this.trackPoints);
       
       // Gestion du recentrage intelligent de la carte
       const chkAutoCenter = document.getElementById('chk-auto-center');
       const shouldCenter = !chkAutoCenter || chkAutoCenter.checked;
       
       if (shouldCenter || isFirstPoint) {
-        map.setView(newLatLng, isFirstPoint ? 15 : map.getZoom());
+        this.map.setView(newLatLng, isFirstPoint ? 15 : this.map.getZoom());
       }
       
       // Mise à jour de l'infobulle popup dynamique
@@ -83,18 +94,29 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
         
-        // Liaison ou mise à jour du contenu
-        const isFirst = !marker.getPopup();
-        marker.bindPopup(popupContent);
+        const isFirst = !this.marker.getPopup();
+        this.marker.bindPopup(popupContent);
         
-        // N'ouvre la popup automatiquement que pour le premier point.
-        // Ensuite, on ne la met à jour en direct que si elle est déjà ouverte par l'utilisateur.
         if (isFirst) {
-          marker.openPopup();
-        } else if (marker.isPopupOpen()) {
-          marker.setPopupContent(popupContent);
+          this.marker.openPopup();
+        } else if (this.marker.isPopupOpen()) {
+          this.marker.setPopupContent(popupContent);
         }
       }
     }
-  };
+  }
+
+  clearTrajectory() {
+    this.trackPoints = [];
+    if (this.polyline) {
+      this.polyline.setLatLngs([]);
+    }
+    if (this.marker) {
+      this.marker.setLatLng([46.603354, 1.888334]);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.waspMapInstance = new WaspMap('map');
 });

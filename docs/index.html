@@ -91,6 +91,13 @@
               <option value="manifest_v1_2.json">T-Beam V1.2 (AXP2101)</option>
             </select>
           </div>
+          <div class="form-group" style="margin-top: 0.8rem;">
+            <label for="flash-band-select" data-i18n="flasher_band">Fréquence cible :</label>
+            <select id="flash-band-select">
+              <option value="868" selected>868 MHz (Europe)</option>
+              <option value="433">433 MHz</option>
+            </select>
+          </div>
           <div class="button-group-row" style="margin-top: 1rem;">
             <button id="btn-flash" class="btn btn-primary" style="width: 100%;" data-i18n="flasher_btn">Flasher la carte</button>
           </div>
@@ -116,6 +123,10 @@
           <div class="input-with-unit">
             <input type="number" id="input-freq" min="400" max="900" step="0.001" placeholder="Ex: 869.525" disabled>
             <span class="unit">MHz</span>
+          </div>
+          <div class="preset-buttons" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+            <button id="btn-preset-868" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 0.75rem;" disabled>Preset 868 MHz</button>
+            <button id="btn-preset-433" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 0.75rem;" disabled>Preset 433 MHz</button>
           </div>
         </div>
         
