@@ -132,21 +132,21 @@ void test_wasp_mode_interval_logic(void) {
 void test_nectarmc_id_mission_encoding(void) {
     uint8_t ssid_type = 2; // BALLOON
     uint8_t ssid_num = 1;  // Tracker ID = 1
-    uint8_t apid = 1;      // APID = 1
+    uint8_t apid = 63;     // APID est figé à 63
 
     uint16_t ssid = ((ssid_type & 0x03) << 8) | ssid_num;
     uint16_t id_mission = (ssid << 6) | (apid & 0x3F);
 
     // ssid = (2 << 8) | 1 = 513
-    // id_mission = (513 << 6) | 1 = 32833 = 0x8041
-    TEST_ASSERT_EQUAL_UINT16(0x8041, id_mission);
+    // id_mission = (513 << 6) | 63 = 32895 = 0x807F
+    TEST_ASSERT_EQUAL_UINT16(0x807F, id_mission);
 }
 
 /**
  * @brief Test du format de trame série NectarMC côté bord
  */
 void test_nectarmc_serial_frame_validation(void) {
-    uint16_t id_mission = 0x8041;
+    uint16_t id_mission = 0x807F; // Avec APID = 63
     wasp_payload_t packet = {0};
     packet.magic = 0xEB;
     packet.id_mission = id_mission;
@@ -167,7 +167,7 @@ void test_nectarmc_serial_frame_validation(void) {
     
     // Validation des champs clés de la trame
     TEST_ASSERT_EQUAL_UINT8(0xEB, frame[0]);
-    TEST_ASSERT_EQUAL_UINT8(0x41, frame[1]);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, frame[1]);
     TEST_ASSERT_EQUAL_UINT8(0x80, frame[2]);
     TEST_ASSERT_EQUAL_UINT8(0x00, frame[3]);
     TEST_ASSERT_EQUAL_UINT8(32, frame[4]);

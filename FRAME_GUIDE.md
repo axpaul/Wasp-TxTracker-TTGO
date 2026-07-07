@@ -75,7 +75,7 @@ Bits:  |15  14  13  12  11  10   9   8   7   6 | 5   4   3   2   1   0|
 **Formule d'encodage** (code source `serial.cpp`) :
 ```c
 uint16_t ssid       = ((ssid_type & 0x03) << 8) | ssid_num;   // SSID = 10 bits
-uint16_t id_mission = (ssid << 6) | (apid & 0x3F);            // Id_mission = 16 bits
+uint16_t id_mission = (ssid << 6) | 63;                       // Id_mission = 16 bits (APID figé à 63)
 // Stocke en Little-Endian dans la trame
 header[1] = id_mission & 0xFF;        // octet bas
 header[2] = (id_mission >> 8) & 0xFF; // octet haut
@@ -84,7 +84,7 @@ header[2] = (id_mission >> 8) & 0xFF; // octet haut
 **Formule de decodage** :
 ```c
 uint16_t id_mission = header[1] | (header[2] << 8);     // Lecture Little-Endian
-uint8_t  apid       = id_mission & 0x3F;                 // Bits 5-0
+uint8_t  apid       = id_mission & 0x3F;                 // Bits 5-0 (vaut toujours 63)
 uint16_t ssid       = (id_mission >> 6) & 0x03FF;        // Bits 15-6
 uint8_t  ssid_num   = ssid & 0xFF;                       // Bits 7-0 du SSID
 uint8_t  ssid_type  = (ssid >> 8) & 0x03;                // Bits 9-8 du SSID
@@ -109,10 +109,10 @@ Conformement au protocole NectarMC, le type de mission (SSID Type) correspond au
 | `BALLOON3` | `10` | 3 | `0x203` | `10 00000011` |
 | `OTHER200` | `11` | 200 | `0x3C8` | `11 11001000` |
 
-**Exemple de calcul complet** : Tracker ID=1, Type=BALLOON(2), APID=1
+**Exemple de calcul complet** : Tracker ID=1, Type=BALLOON(2), APID=63 (fige)
 *   `ssid = (2 << 8) | 1 = 0x0201 = 513`
-*   `id_mission = (513 << 6) | 1 = 32833 = 0x8041`
-*   En Little-Endian dans la trame : `[0x41, 0x80]`
+*   `id_mission = (513 << 6) | 63 = 32895 = 0x807F`
+*   En Little-Endian dans la trame : `[0x7F, 0x80]`
 
 ### Payload Size (Octet 3)
 

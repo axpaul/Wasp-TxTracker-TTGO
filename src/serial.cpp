@@ -110,7 +110,7 @@ void send_telemetry() {
     // Remplissage de l'en-tete de routage standard Nectar
     packet.magic = NECTAR_MAGIC;
     uint16_t ssid = ((activeConfig.trackerType & 0x03) << 8) | activeConfig.trackerId;
-    packet.id_mission = (ssid << 6) | (activeConfig.apid & 0x3F);
+    packet.id_mission = (ssid << 6) | 63; // APID est figé à 63 de façon permanente (intouchable)
     packet.payload_size = sizeof(wasp_payload_t) - 4; // 29 octets pour WASP
     packet.utc = (uint32_t)rtc.getEpoch();
     
