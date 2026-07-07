@@ -245,3 +245,65 @@ void configureMode(uint8_t mode) {
         digitalWrite(4, HIGH);
     }
 }
+
+/**
+ * @brief Assemble et envoie une trame de telemetrie (GPS + Systeme).
+ */
+void send_telemetry() {
+    wasp_payload_t packet;
+    
+    // Remplissage de l'en-tete de routage standard Nectar
+    packet.magic = NECTAR_MAGIC;
+    uint16_t ssid = ((activeConfig.trackerType & 0x03) << 8) | activeConfig.trackerId;
+    packet.id_mission = (ssid << 6) | 63; // APID est figé à 63 de façon permanente (intouchable)
+    packet.payload_size = sizeof(wasp_payload_t) - 4; // 29 octets pour WASP
+    packet.utc = (uint32_t)rtc.getEpoch();
+    
+    double lat = 0.0;
+    double lon = 0.0;
+    double alt = 0.0;
+    double spd = 0.0;
+    double cog = 0.0;
+    uint32_t sats = 0;
+    bool fix = false;
+    
+    if (xSemaphoreTake(gpsMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+        lat = sharedGPSData.latitude;
+        lon = sharedGPSData.longitude;
+        alt = sharedGPSData.altitude;
+        spd = sharedGPSData.speed;
+        cog = sharedGPSData.course;
+        sats = sharedGPSData.satellites;
+        fix = sharedGPSData.fix;
+        xSemaphoreGive(gpsMutex);
+    }
+    
+    packet.lat = (float)lat;
+    packet.lon = (float)lon;
+    packet.alt = (float)alt;
+    packet.spd = (float)spd;
+    packet.cog = (float)cog;
+
+    // Mesures du PMU (tension batterie et temperature interne)
+    packet.vbat = getPMUBatteryVoltage();
+    
+    float internalTemp = getPMUTemperature();
+    packet.temp = (int16_t)(internalTemp * 100.0f); // Conversion en 1/100 °C
+    
+    // Construction du bitmask d'etat
+    packet.status = (uint8_t)(sats & 0x1F); // Bits 0-4: Sats
+    if (fix) {
+        packet.status |= (1 << 7); // Bit 7: GPS Fix valide
+    }
+    if (currentMode == 1) {
+        packet.status |= (1 << 5); // Bit 5: Mode Eco actif
+    }
+    
+    // Traiter et emettre les donnees de telemetrie sur les ports serie (USB/Bluetooth)
+    outputTelemetryFrame(packet);
+
+    // Envoi de la telemetrie dans la file de transmission radio LoRa
+    if (gpsQueue != NULL) {
+        xQueueSend(gpsQueue, &packet, 0);
+    }
+}
