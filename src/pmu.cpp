@@ -3,6 +3,7 @@
  * @brief Gestion de l'unité de gestion d'énergie (PMU AXP192 / AXP2101).
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  */
 
 #include "header.h"

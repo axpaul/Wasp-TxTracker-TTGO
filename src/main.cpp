@@ -3,6 +3,7 @@
  * @brief Point d'entrée principal du tracker Wasp-TX.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  * 
  * Orchestre l'initialisation matérielle (UART GPS, PMU AXP192, Radio SX1276),
  * traite les données GPS, gère l'envoi de la télémétrie LoRa et le protocole binaire,

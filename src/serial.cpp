@@ -3,6 +3,7 @@
  * @brief Gestion de la liaison série USB et Bluetooth pour l'envoi des trames NectarMC.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  */
 
 #include "header.h"

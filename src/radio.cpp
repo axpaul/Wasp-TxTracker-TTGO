@@ -3,6 +3,7 @@
  * @brief Gestion de la radio SX1276 et stockage NVS de la configuration.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  */
 
 #include "header.h"

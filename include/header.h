@@ -3,6 +3,7 @@
  * @brief Fichier d'en-tête global pour le projet Wasp-TX.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  * 
  * Contient les définitions des broches, la structure de télémétrie compacte,
  * les structures de configuration, et les déclarations de fonctions pour le tracker Wasp-TX.

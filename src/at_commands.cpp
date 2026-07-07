@@ -3,6 +3,7 @@
  * @brief Gestion de l'analyse, du décodage et de l'application des commandes AT pour Wasp-TX.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  */
 
 #include "header.h"

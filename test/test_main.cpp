@@ -3,6 +3,7 @@
  * @brief Tests unitaires avec le framework Unity de PlatformIO pour Wasp-TX.
  * @author Paul Miailhe
  * @date 27/06/2026
+ * @version 1.2.0
  */
 
 #include <Arduino.h>

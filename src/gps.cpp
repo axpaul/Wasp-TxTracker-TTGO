@@ -3,6 +3,7 @@
  * @brief Gestion asynchrone du module GPS (NMEA parsing et thread-safety).
  * @author Paul Miailhe
  * @date 29/06/2026
+ * @version 1.2.0
  */
 
 #include "header.h"
